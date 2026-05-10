@@ -1,0 +1,1384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Book a Service | Dynamic Detailing & Tint</title>
+<link href="https://fonts.googleapis.com/css2?family=Bangers&family=Nunito:wght@400;500;600;700;800;900&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+/* ── CONFIG NOTE ──────────────────────────────────────────────
+   TWILIO:   Replace TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM_NUMBER
+   SENDGRID: Replace SENDGRID_API_KEY, FROM_EMAIL
+   ADMIN:    This file connects to your existing internal dashboard
+             via the BookingBridge object (see bottom <script>)
+   ─────────────────────────────────────────────────────────── */
+
+:root {
+  --red:     #c0392b;
+  --red2:    #a93226;
+  --gold:    #f0b429;
+  --black:   #111;
+  --dark:    #1a1a1a;
+  --dark2:   #222;
+  --white:   #fff;
+  --off:     #f7f7f7;
+  --lgray:   #e5e5e5;
+  --gray:    #888;
+  --text:    #222;
+  --green:   #16a34a;
+  --font-d:  'Bangers', cursive;
+  --font-h:  'Oswald', sans-serif;
+  --font-b:  'Nunito', sans-serif;
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{background:var(--off);color:var(--text);font-family:var(--font-b);min-height:100vh;}
+
+/* ── TOP NAV ── */
+.topnav{background:var(--black);padding:0 32px;height:64px;display:flex;align-items:center;justify-content:space-between;border-bottom:3px solid var(--red);}
+.nav-logo{display:flex;align-items:center;gap:8px;text-decoration:none;}
+.nav-logo-name{font-family:var(--font-d);font-size:26px;letter-spacing:2px;color:#fff;text-shadow:2px 2px 0 var(--red);}
+.nav-logo-sub{font-family:var(--font-h);font-size:10px;letter-spacing:2px;color:var(--gold);text-transform:uppercase;display:block;line-height:1;}
+.nav-phone{font-family:var(--font-h);font-size:14px;color:rgba(255,255,255,.8);display:flex;align-items:center;gap:6px;}
+.nav-phone span{color:var(--gold);}
+
+/* ── HERO STRIP ── */
+.hero-strip{background:var(--red);padding:28px 32px;text-align:center;position:relative;overflow:hidden;}
+.hero-strip::before{content:'DYNAMIC';position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-family:var(--font-d);font-size:120px;letter-spacing:4px;color:rgba(0,0,0,.1);white-space:nowrap;pointer-events:none;}
+.hs-title{font-family:var(--font-d);font-size:36px;letter-spacing:2px;color:#fff;position:relative;z-index:1;}
+.hs-sub{font-family:var(--font-h);font-size:13px;letter-spacing:1px;color:rgba(255,255,255,.8);margin-top:4px;position:relative;z-index:1;}
+
+/* ── PROGRESS BAR ── */
+.progress-wrap{background:#fff;border-bottom:1px solid var(--lgray);padding:0 32px;}
+.progress-inner{max-width:800px;margin:0 auto;display:flex;align-items:center;padding:20px 0;}
+.step{display:flex;align-items:center;gap:8px;flex:1;}
+.step-dot{width:32px;height:32px;border-radius:50%;border:2px solid var(--lgray);display:flex;align-items:center;justify-content:center;font-family:var(--font-h);font-size:13px;font-weight:600;color:var(--gray);background:#fff;flex-shrink:0;transition:all .3s;}
+.step.active .step-dot{background:var(--red);border-color:var(--red);color:#fff;}
+.step.done .step-dot{background:var(--green);border-color:var(--green);color:#fff;}
+.step-label{font-family:var(--font-h);font-size:12px;letter-spacing:.5px;color:var(--gray);text-transform:uppercase;transition:color .3s;}
+.step.active .step-label{color:var(--red);font-weight:600;}
+.step.done .step-label{color:var(--green);}
+.step-connector{flex:1;height:2px;background:var(--lgray);margin:0 8px;transition:background .3s;}
+.step-connector.done{background:var(--green);}
+
+/* ── MAIN LAYOUT ── */
+.booking-wrap{max-width:880px;margin:32px auto;padding:0 24px 60px;}
+
+/* ── PANELS ── */
+.panel{display:none;animation:fadeIn .3s ease;}
+.panel.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── CARD ── */
+.card{background:#fff;border:1px solid var(--lgray);border-radius:10px;overflow:hidden;box-shadow:0 2px 16px rgba(0,0,0,.06);}
+.card-header{background:var(--dark);padding:20px 28px;display:flex;align-items:center;gap:12px;border-bottom:3px solid var(--red);}
+.card-header-icon{font-size:24px;}
+.card-header-title{font-family:var(--font-d);font-size:22px;letter-spacing:1px;color:#fff;}
+.card-header-sub{font-size:12px;color:rgba(255,255,255,.5);margin-top:2px;font-family:var(--font-h);letter-spacing:.5px;}
+.card-body{padding:28px;}
+
+/* ── SERVICE SELECTOR ── */
+.service-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:24px;}
+.svc-tab{background:var(--off);border:1.5px solid var(--lgray);border-radius:4px;padding:9px 16px;font-family:var(--font-h);font-size:12px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;color:var(--gray);cursor:pointer;transition:all .2s;}
+.svc-tab:hover{border-color:var(--red);color:var(--red);}
+.svc-tab.active{background:var(--red);border-color:var(--red);color:#fff;}
+
+.service-options{display:none;}
+.service-options.active{display:block;}
+
+.svc-option-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:8px;}
+.svc-option{background:var(--off);border:2px solid var(--lgray);border-radius:8px;padding:14px 16px;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:space-between;}
+.svc-option:hover{border-color:var(--red);background:rgba(192,57,43,.04);}
+.svc-option.selected{border-color:var(--red);background:rgba(192,57,43,.06);}
+.svc-option-name{font-family:var(--font-h);font-size:13px;font-weight:600;color:var(--black);}
+.svc-option-price{font-family:var(--font-d);font-size:18px;letter-spacing:.5px;color:var(--red);}
+
+/* Vehicle size pills */
+.variant-section{margin-top:16px;padding:16px;background:rgba(192,57,43,.04);border:1px solid rgba(192,57,43,.15);border-radius:6px;display:none;}
+.variant-section.show{display:block;}
+.variant-label{font-family:var(--font-h);font-size:11px;letter-spacing:1.5px;color:var(--red);text-transform:uppercase;margin-bottom:10px;}
+.variants{display:flex;flex-wrap:wrap;gap:8px;}
+.variant-pill{background:#fff;border:1.5px solid var(--lgray);border-radius:20px;padding:6px 14px;font-size:13px;font-family:var(--font-h);cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:6px;}
+.variant-pill:hover,.variant-pill.selected{background:rgba(192,57,43,.08);border-color:var(--red);color:var(--red);}
+.variant-pill .vp-price{font-weight:700;color:var(--red);}
+
+/* Selected summary */
+.selected-summary{background:var(--dark);border-radius:6px;padding:14px 18px;margin-top:20px;display:none;align-items:center;justify-content:space-between;}
+.selected-summary.show{display:flex;}
+.ss-label{font-family:var(--font-h);font-size:12px;letter-spacing:1px;color:rgba(255,255,255,.5);text-transform:uppercase;margin-bottom:3px;}
+.ss-value{font-size:14px;color:#fff;font-weight:600;}
+.ss-price{font-family:var(--font-d);font-size:28px;letter-spacing:1px;color:var(--gold);}
+
+/* ── FORM FIELDS ── */
+.form-section-title{font-family:var(--font-h);font-size:13px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--red);margin:0 0 16px;display:flex;align-items:center;gap:8px;}
+.form-section-title::after{content:'';flex:1;height:1px;background:rgba(192,57,43,.2);}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
+.form-grid.three{grid-template-columns:1fr 1fr 1fr;}
+.form-group{display:flex;flex-direction:column;gap:5px;}
+.form-group.full{grid-column:span 2;}
+.f-label{font-family:var(--font-h);font-size:10px;font-weight:700;letter-spacing:1.5px;color:#666;text-transform:uppercase;}
+.f-required{color:var(--red);}
+.f-inp,.f-sel,.f-ta{border:1.5px solid var(--lgray);border-radius:5px;padding:11px 14px;font-family:var(--font-b);font-size:14px;color:var(--text);outline:none;transition:border-color .2s;background:#fff;width:100%;}
+.f-inp:focus,.f-sel:focus,.f-ta:focus{border-color:var(--red);}
+.f-inp.error,.f-sel.error{border-color:#ef4444;}
+.f-ta{resize:vertical;min-height:80px;}
+.f-sel option{background:#fff;}
+.f-hint{font-size:11px;color:var(--gray);margin-top:2px;}
+.f-error{font-size:11px;color:#ef4444;margin-top:2px;display:none;}
+.f-error.show{display:block;}
+
+/* Date/time grid */
+.datetime-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px;}
+
+/* ── VEHICLE CARD ── */
+.vehicle-type-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;}
+.vtype{background:var(--off);border:2px solid var(--lgray);border-radius:8px;padding:14px 10px;text-align:center;cursor:pointer;transition:all .2s;}
+.vtype:hover,.vtype.selected{border-color:var(--red);background:rgba(192,57,43,.05);}
+.vtype-icon{font-size:28px;margin-bottom:6px;}
+.vtype-label{font-family:var(--font-h);font-size:11px;font-weight:600;color:var(--black);text-transform:uppercase;letter-spacing:.5px;}
+
+/* ── REVIEW PANEL ── */
+.review-section{margin-bottom:20px;}
+.review-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--lgray);font-size:14px;}
+.review-row:last-child{border-bottom:none;}
+.rr-label{color:var(--gray);font-family:var(--font-h);font-size:12px;letter-spacing:.5px;text-transform:uppercase;}
+.rr-value{font-weight:600;color:var(--black);text-align:right;}
+.review-total{background:var(--dark);border-radius:8px;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;margin-top:16px;}
+.rt-label{font-family:var(--font-h);font-size:14px;letter-spacing:1px;color:rgba(255,255,255,.6);text-transform:uppercase;}
+.rt-price{font-family:var(--font-d);font-size:36px;letter-spacing:1px;color:var(--gold);}
+.rt-note{font-size:11px;color:rgba(255,255,255,.4);margin-top:2px;}
+
+/* Policy box */
+.policy-box{background:rgba(192,57,43,.05);border:1px solid rgba(192,57,43,.2);border-radius:6px;padding:14px 16px;margin:16px 0;font-size:13px;color:#555;line-height:1.65;}
+.policy-box strong{color:var(--red);}
+
+/* Consent checkbox */
+.consent-row{display:flex;align-items:flex-start;gap:10px;margin-top:16px;}
+.consent-cb{width:18px;height:18px;border:2px solid var(--lgray);border-radius:3px;cursor:pointer;accent-color:var(--red);flex-shrink:0;margin-top:2px;}
+.consent-text{font-size:13px;color:var(--gray);line-height:1.5;}
+.consent-text a{color:var(--red);}
+
+/* ── BUTTONS ── */
+.btn-row{display:flex;align-items:center;justify-content:space-between;margin-top:24px;gap:12px;}
+.btn-primary{background:var(--red);color:#fff;padding:14px 32px;border-radius:5px;font-family:var(--font-h);font-size:14px;font-weight:600;letter-spacing:1px;text-transform:uppercase;border:none;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:8px;}
+.btn-primary:hover{background:var(--red2);transform:translateY(-1px);}
+.btn-primary:disabled{background:#ccc;cursor:not-allowed;transform:none;}
+.btn-back{background:transparent;color:var(--gray);padding:14px 24px;border-radius:5px;font-family:var(--font-h);font-size:13px;font-weight:600;letter-spacing:.5px;border:1.5px solid var(--lgray);cursor:pointer;transition:all .2s;}
+.btn-back:hover{border-color:var(--red);color:var(--red);}
+.btn-full{width:100%;}
+
+/* ── CONFIRMATION ── */
+.confirm-wrap{text-align:center;padding:48px 32px;}
+.confirm-icon{font-size:72px;margin-bottom:16px;animation:pop .4s cubic-bezier(.175,.885,.32,1.275);}
+@keyframes pop{from{transform:scale(0)}to{transform:scale(1)}}
+.confirm-title{font-family:var(--font-d);font-size:40px;letter-spacing:2px;color:var(--black);margin-bottom:8px;}
+.confirm-sub{font-size:15px;color:var(--gray);line-height:1.7;margin-bottom:28px;}
+.confirm-id{font-family:var(--font-h);font-size:13px;color:var(--gray);margin-bottom:24px;}
+.confirm-id span{color:var(--red);font-weight:700;font-size:18px;}
+.confirm-details{background:var(--off);border:1px solid var(--lgray);border-radius:8px;padding:20px;text-align:left;margin-bottom:24px;}
+.cd-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--lgray);font-size:14px;}
+.cd-row:last-child{border-bottom:none;}
+.cd-label{color:var(--gray);font-family:var(--font-h);font-size:11px;letter-spacing:.5px;text-transform:uppercase;}
+.cd-value{font-weight:600;color:var(--black);}
+
+/* What happens next timeline */
+.timeline{display:flex;flex-direction:column;gap:0;margin:20px 0;text-align:left;}
+.tl-item{display:flex;gap:16px;position:relative;}
+.tl-item::before{content:'';position:absolute;left:19px;top:40px;bottom:-10px;width:2px;background:var(--lgray);}
+.tl-item:last-child::before{display:none;}
+.tl-dot{width:40px;height:40px;border-radius:50%;background:var(--dark);border:3px solid var(--red);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.tl-content{padding:8px 0 20px;}
+.tl-title{font-family:var(--font-h);font-size:14px;font-weight:600;color:var(--black);margin-bottom:3px;}
+.tl-desc{font-size:13px;color:var(--gray);line-height:1.5;}
+
+/* ── NOTIFICATION PREVIEW ── */
+.notif-preview{background:#1a1a2e;border-radius:12px;padding:20px;margin:12px 0;}
+.np-header{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+.np-header-icon{font-size:22px;}
+.np-header-title{font-family:var(--font-h);font-size:12px;letter-spacing:1px;color:var(--gold);text-transform:uppercase;}
+.np-phone{background:#2a2a4a;border-radius:10px;padding:14px;font-size:13px;color:rgba(255,255,255,.85);line-height:1.7;border-left:3px solid var(--gold);}
+.np-email{background:#1e2a1e;border-radius:10px;padding:14px;margin-top:10px;font-size:13px;color:rgba(255,255,255,.85);line-height:1.7;border-left:3px solid #22c55e;}
+.np-label{font-size:10px;letter-spacing:2px;color:rgba(255,255,255,.4);text-transform:uppercase;margin-bottom:6px;font-family:var(--font-h);}
+
+/* ── LOADER ── */
+.loader-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1000;display:none;align-items:center;justify-content:center;flex-direction:column;gap:16px;}
+.loader-overlay.show{display:flex;}
+.loader{width:44px;height:44px;border:4px solid rgba(255,255,255,.2);border-top-color:var(--red);border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loader-text{font-family:var(--font-h);font-size:14px;letter-spacing:1px;color:#fff;text-transform:uppercase;}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--green);color:#fff;padding:14px 20px;border-radius:8px;font-family:var(--font-h);font-size:13px;letter-spacing:.5px;z-index:2000;transform:translateY(100px);opacity:0;transition:all .3s;display:flex;align-items:center;gap:8px;}
+.toast.show{transform:translateY(0);opacity:1;}
+.toast.error{background:#ef4444;}
+
+/* ── ADMIN BRIDGE STATUS ── */
+.bridge-badge{background:rgba(22,163,74,.15);border:1px solid rgba(22,163,74,.3);border-radius:6px;padding:10px 14px;display:flex;align-items:center;gap:8px;margin-bottom:20px;font-size:12px;color:#16a34a;font-family:var(--font-h);letter-spacing:.5px;}
+
+/* ── RESPONSIVE ── */
+@media(max-width:640px){
+  .svc-option-grid,.form-grid,.datetime-grid{grid-template-columns:1fr;}
+  .form-grid.three{grid-template-columns:1fr 1fr;}
+  .vehicle-type-grid{grid-template-columns:repeat(2,1fr);}
+  .form-group.full{grid-column:span 1;}
+  .btn-row{flex-direction:column-reverse;}
+  .btn-primary,.btn-back{width:100%;justify-content:center;}
+}
+</style>
+</head>
+<body>
+
+<!-- TOP NAV -->
+<div class="topnav">
+  <a href="dynamic-detailing-v3.html" class="nav-logo">
+    <span style="font-size:32px">🚗</span>
+    <div>
+      <div class="nav-logo-name">DYNAMIC</div>
+      <span class="nav-logo-sub">Detailing &amp; Tint</span>
+    </div>
+  </a>
+  <div class="nav-phone"><span>📞</span>(410) 674-2430</div>
+</div>
+
+<!-- HERO STRIP -->
+<div class="hero-strip">
+  <div class="hs-title">Book Your Service</div>
+  <div class="hs-sub">Takes 2 minutes · Confirmation sent instantly to your phone &amp; email</div>
+</div>
+
+<!-- PROGRESS BAR -->
+<div class="progress-wrap">
+  <div class="progress-inner">
+    <div class="step active" id="step1">
+      <div class="step-dot">1</div>
+      <div class="step-label">Service</div>
+    </div>
+    <div class="step-connector" id="conn1"></div>
+    <div class="step" id="step2">
+      <div class="step-dot">2</div>
+      <div class="step-label">Vehicle</div>
+    </div>
+    <div class="step-connector" id="conn2"></div>
+    <div class="step" id="step3">
+      <div class="step-dot">3</div>
+      <div class="step-label">Your Info</div>
+    </div>
+    <div class="step-connector" id="conn3"></div>
+    <div class="step" id="step4">
+      <div class="step-dot">4</div>
+      <div class="step-label">Date &amp; Time</div>
+    </div>
+    <div class="step-connector" id="conn4"></div>
+    <div class="step" id="step5">
+      <div class="step-dot">5</div>
+      <div class="step-label">Review</div>
+    </div>
+    <div class="step-connector" id="conn5"></div>
+    <div class="step" id="step6">
+      <div class="step-dot">✓</div>
+      <div class="step-label">Confirmed</div>
+    </div>
+  </div>
+</div>
+
+<!-- BOOKING WRAP -->
+<div class="booking-wrap">
+
+  <!-- ═══ STEP 1 — SERVICE ═══ -->
+  <div class="panel active" id="panel-1">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-header-icon">🔍</div>
+        <div>
+          <div class="card-header-title">Select Your Service</div>
+          <div class="card-header-sub">Choose a category, then select your specific service</div>
+        </div>
+      </div>
+      <div class="card-body">
+
+        <!-- Category tabs -->
+        <div class="service-tabs">
+          <button class="svc-tab active" onclick="showSvcCat('tinting',this)">🪟 Window Tinting</button>
+          <button class="svc-tab" onclick="showSvcCat('ceramic',this)">✨ Ceramic Coatings</button>
+          <button class="svc-tab" onclick="showSvcCat('commercial',this)">🏢 Commercial/Residential</button>
+          <button class="svc-tab" onclick="showSvcCat('detailing',this)">🧽 Detailing Packages</button>
+          <button class="svc-tab" onclick="showSvcCat('addons',this)">➕ Add-On's</button>
+          <button class="svc-tab" onclick="showSvcCat('maintenance',this)">🔧 Maintenance</button>
+        </div>
+
+        <!-- TINTING -->
+        <div class="service-options active" id="svc-tinting">
+          <div class="svc-option-grid">
+            <div class="svc-option" onclick="selectService(this,'Tesla Ceramic Tint','Pricing varies by model')">
+              <div><div class="svc-option-name">Tesla Ceramic Tint</div><div style="font-size:12px;color:var(--gray);margin-top:3px;">3M Ceramic IR · Model-specific</div></div>
+              <div class="svc-option-price">$375+</div>
+            </div>
+            <div class="svc-option" onclick="selectService(this,'3M Ceramic IR Tint','Pricing varies by vehicle')">
+              <div><div class="svc-option-name">3M Ceramic IR Tint</div><div style="font-size:12px;color:var(--gray);margin-top:3px;">Best heat rejection · 95% IR block</div></div>
+              <div class="svc-option-price">$200+</div>
+            </div>
+            <div class="svc-option" onclick="selectService(this,'3M Color Stable Tint','Pricing varies by vehicle')">
+              <div><div class="svc-option-name">3M Color Stable Tint</div><div style="font-size:12px;color:var(--gray);margin-top:3px;">Non-reflective carbon · No color shift</div></div>
+              <div class="svc-option-price">$150+</div>
+            </div>
+            <div class="svc-option" onclick="selectService(this,'Windshield Tint','Pricing varies by type')">
+              <div><div class="svc-option-name">Windshield Tint</div><div style="font-size:12px;color:var(--gray);margin-top:3px;">Visor strip or full clear film</div></div>
+              <div class="svc-option-price">$75+</div>
+            </div>
+          </div>
+
+          <!-- Tesla variants -->
+          <div class="variant-section" id="vs-Tesla Ceramic Tint">
+            <div class="variant-label">Select Your Tesla Model</div>
+            <div class="variants">
+              <div class="variant-pill" onclick="selectVariant(this,'$375')"><span>Model 3 Shadow Line</span><span class="vp-price">$375</span></div>
+              <div class="variant-pill" onclick="selectVariant(this,'$750')"><span>Model 3 Full Back</span><span class="vp-price">$750</span></div>
+              <div class="variant-pill" onclick="selectVariant(this,'$400')"><span>Model Y</span><span class="vp-price">$400</span></div>
+              <div class="variant-pill" onclick="selectVariant(this,'$375')"><span>Model S</span><span class="vp-price">$375</span></div>
+              <div class="variant-pill" onclick="selectVariant(this,'$500')"><span>Model X</span><span class="vp-price">$500</span></div>
+              <div class="variant-pill" onclick="selectVariant(this,'$550')"><span>Model 3 (2 piece rear)</span><span class="vp-price">$550</span></div>
+            </div>
+          </div>
+          <!-- 3M Ceramic IR variants -->
+          <div class="variant-section" id="vs-3M Ceramic IR Tint">
+            <div class="variant-label">Select Vehicle Type</div>
+            <div class="variants">
+              <div class="variant-pill" onclick="selectVariant(this,'$300')"><span>2 Door Truck/Coupe</span><span class="vp-price">$300</span></div>
+              <div class="variant-pill" onclick="selectVariant(this,'$350')"><span>2.5 Door Truck/Sedan</span><span class="vp-price">$350</span></div>
+              <div class="variant-pill" onclick="selectVariant(this,'$375')"><span>Small SUV / 4 Door</span><span class="vp-price">$375</span></div>
+              <div class="variant-pill" onclick="selectVariant(this,'$400')"><span>Large SUV</span><span class="vp-price">$400</span></div>
+              <div class="variant-pill" onclick="selectVariant(this,'$200')"><span>Front Doors Only</span><span class="vp-price">$200</span></div>
+              <div class="variant-pill" onclick="selectVariant(this,'$425')"><span>Minivan</span><span class="vp-price">$425</span></div>
+            </div>
+          </div>
+          <!-- 3M Color Stable variants -->
+          <div class="variant-section" id="vs-3M Color Stable Tint">
+            <div class="variant-label">Select Vehicle Type</div>
+            <div class="variants">
+              <div class="variant-pill" onclick="selectVariant(this,'$225')"><span>2 Door Truck/Coupe</span><span class="vp-price">$225</span></div>
+              <div class="variant-pill" onclick="selectVariant(this,'$250')"><span>2.5 Door Truck/Sedan</span><span class="vp-price">$250</span></div>
+              <div class="variant-pill" onclick="selectVariant(this,'$275')"><span>Small SUV / 4 Door</span><span class="vp-price">$275</span></div>
+              <div class="variant-pill" onclick="selectVariant(this,'$300')"><span>Large SUV</span><span class="vp-price">$300</span></div>
+              <div class="variant-pill" onclick="selectVariant(this,'$150')"><span>Front Doors Only</span><span class="vp-price">$150</span></div>
+              <div class="variant-pill" onclick="selectVariant(this,'$325')"><span>Minivan</span><span class="vp-price">$325</span></div>
+            </div>
+          </div>
+          <!-- Windshield variants -->
+          <div class="variant-section" id="vs-Windshield Tint">
+            <div class="variant-label">Select Option</div>
+            <div class="variants">
+              <div class="variant-pill" onclick="selectVariant(this,'$75')"><span>Visor Strip (top only)</span><span class="vp-price">$75</span></div>
+              <div class="variant-pill" onclick="selectVariant(this,'$200')"><span>Full Windshield (clear)</span><span class="vp-price">$200</span></div>
+              <div class="variant-pill" onclick="selectVariant(this,'$250')"><span>Windshield + Strip</span><span class="vp-price">$250</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CERAMIC -->
+        <div class="service-options" id="svc-ceramic">
+          <div class="svc-option-grid">
+            <div class="svc-option" onclick="selectService(this,'System X Diamond Ceramic','Pricing varies by vehicle size')">
+              <div><div class="svc-option-name">System X Diamond</div><div style="font-size:12px;color:var(--gray);margin-top:3px;">9H · 5+ year protection</div></div>
+              <div class="svc-option-price">$1,200+</div>
+            </div>
+            <div class="svc-option" onclick="selectService(this,'System X Sport Ceramic','Pricing varies by vehicle size')">
+              <div><div class="svc-option-name">System X Sport</div><div style="font-size:12px;color:var(--gray);margin-top:3px;">Entry ceramic · 1–2 years</div></div>
+              <div class="svc-option-price">$800+</div>
+            </div>
+            <div class="svc-option" onclick="selectService(this,'Ceramic + Tint Bundle','Call for pricing')">
+              <div><div class="svc-option-name">Ceramic + Tint Bundle</div><div style="font-size:12px;color:var(--gray);margin-top:3px;">Best value combo</div></div>
+              <div class="svc-option-price">Bundle</div>
+            </div>
+          </div>
+          <div class="variant-section" id="vs-System X Diamond Ceramic">
+            <div class="variant-label">Select Vehicle Size</div>
+            <div class="variants">
+              <div class="variant-pill" onclick="selectVariant(this,'$1,200')"><span>Sedan / Coupe</span><span class="vp-price">$1,200</span></div>
+              <div class="variant-pill" onclick="selectVariant(this,'$1,400')"><span>SUV / Crossover</span><span class="vp-price">$1,400</span></div>
+              <div class="variant-pill" onclick="selectVariant(this,'$1,600')"><span>Truck / Large SUV</span><span class="vp-price">$1,600</span></div>
+            </div>
+          </div>
+          <div class="variant-section" id="vs-System X Sport Ceramic">
+            <div class="variant-label">Select Vehicle Size</div>
+            <div class="variants">
+              <div class="variant-pill" onclick="selectVariant(this,'$800')"><span>Sedan / Coupe</span><span class="vp-price">$800</span></div>
+              <div class="variant-pill" onclick="selectVariant(this,'$950')"><span>SUV / Crossover</span><span class="vp-price">$950</span></div>
+              <div class="variant-pill" onclick="selectVariant(this,'$1,100')"><span>Truck / Large SUV</span><span class="vp-price">$1,100</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- COMMERCIAL -->
+        <div class="service-options" id="svc-commercial">
+          <div class="svc-option-grid">
+            <div class="svc-option" onclick="selectService(this,'Residential Window Tinting','Per window pricing')">
+              <div><div class="svc-option-name">Residential Tinting</div><div style="font-size:12px;color:var(--gray);margin-top:3px;">Home windows · 3M film</div></div>
+              <div class="svc-option-price">$75+</div>
+            </div>
+            <div class="svc-option" onclick="selectService(this,'Commercial Window Tinting','Free on-site estimate')">
+              <div><div class="svc-option-name">Commercial Tinting</div><div style="font-size:12px;color:var(--gray);margin-top:3px;">Office / storefront · Free estimate</div></div>
+              <div class="svc-option-price">Quote</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- DETAILING -->
+        <div class="service-options" id="svc-detailing">
+          <div class="svc-option-grid">
+            <div class="svc-option" onclick="selectService(this,'Basic Detail','$125 sedan · +$25 SUV/Truck')">
+              <div><div class="svc-option-name">Basic Detail</div><div style="font-size:12px;color:var(--gray);margin-top:3px;">Exterior wash · vacuum · windows</div></div>
+              <div class="svc-option-price">$125+</div>
+            </div>
+            <div class="svc-option" onclick="selectService(this,'Full Detail','$250 sedan · +$50 SUV/Truck')">
+              <div><div class="svc-option-name">Full Detail</div><div style="font-size:12px;color:var(--gray);margin-top:3px;">Clay bar · shampoo · leather · wax</div></div>
+              <div class="svc-option-price">$250+</div>
+            </div>
+            <div class="svc-option" onclick="selectService(this,'Premium Detail','$450 sedan · +$100 SUV/Truck')">
+              <div><div class="svc-option-name">Premium Detail</div><div style="font-size:12px;color:var(--gray);margin-top:3px;">Paint correction · engine · headlights</div></div>
+              <div class="svc-option-price">$450+</div>
+            </div>
+            <div class="svc-option" onclick="selectService(this,'Exterior Wash','$100–125')">
+              <div><div class="svc-option-name">Exterior Wash Only</div><div style="font-size:12px;color:var(--gray);margin-top:3px;">Full exterior decontamination</div></div>
+              <div class="svc-option-price">$100+</div>
+            </div>
+            <div class="svc-option" onclick="selectService(this,'Interior Wash','$100–125')">
+              <div><div class="svc-option-name">Interior Wash Only</div><div style="font-size:12px;color:var(--gray);margin-top:3px;">Deep clean interior</div></div>
+              <div class="svc-option-price">$100+</div>
+            </div>
+            <div class="svc-option" onclick="selectService(this,'Headlight Restoration','$50')">
+              <div><div class="svc-option-name">Headlight Restoration</div><div style="font-size:12px;color:var(--gray);margin-top:3px;">Restore cloudy headlights</div></div>
+              <div class="svc-option-price">$50</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ADD-ONS -->
+        <div class="service-options" id="svc-addons">
+          <div class="svc-option-grid">
+            <div class="svc-option" onclick="selectService(this,'Engine Bay Detail','$50')"><div><div class="svc-option-name">Engine Bay Detail</div></div><div class="svc-option-price">$50</div></div>
+            <div class="svc-option" onclick="selectService(this,'Fabric Protection','$90')"><div><div class="svc-option-name">Fabric Protection</div></div><div class="svc-option-price">$90</div></div>
+            <div class="svc-option" onclick="selectService(this,'Ozone Odor Treatment','$75')"><div><div class="svc-option-name">Ozone Odor Treatment</div></div><div class="svc-option-price">$75</div></div>
+            <div class="svc-option" onclick="selectService(this,'Ceramic Spray Sealant','$80')"><div><div class="svc-option-name">Ceramic Spray Sealant</div></div><div class="svc-option-price">$80</div></div>
+            <div class="svc-option" onclick="selectService(this,'Paint Decontamination','$60')"><div><div class="svc-option-name">Paint Decontamination</div></div><div class="svc-option-price">$60</div></div>
+            <div class="svc-option" onclick="selectService(this,'Windshield Treatment','$45')"><div><div class="svc-option-name">Windshield Treatment</div></div><div class="svc-option-price">$45</div></div>
+          </div>
+        </div>
+
+        <!-- MAINTENANCE -->
+        <div class="service-options" id="svc-maintenance">
+          <div class="svc-option-grid">
+            <div class="svc-option" onclick="selectService(this,'Basic Maintenance Package','$75/visit')"><div><div class="svc-option-name">Basic Maintenance</div><div style="font-size:12px;color:var(--gray);margin-top:3px;">Quarterly recommended</div></div><div class="svc-option-price">$75</div></div>
+            <div class="svc-option" onclick="selectService(this,'Premium Maintenance Package','$150/visit')"><div><div class="svc-option-name">Premium Maintenance</div><div style="font-size:12px;color:var(--gray);margin-top:3px;">Bi-annual recommended</div></div><div class="svc-option-price">$150</div></div>
+            <div class="svc-option" onclick="selectService(this,'Annual Maintenance Plan','Custom pricing')"><div><div class="svc-option-name">Annual Plan</div><div style="font-size:12px;color:var(--gray);margin-top:3px;">Full year scheduled care</div></div><div class="svc-option-price">Custom</div></div>
+          </div>
+        </div>
+
+        <!-- Selected summary -->
+        <div class="selected-summary" id="selected-summary">
+          <div>
+            <div class="ss-label">Selected Service</div>
+            <div class="ss-value" id="ss-name">—</div>
+            <div style="font-size:12px;color:rgba(255,255,255,.4);margin-top:2px;" id="ss-variant"></div>
+          </div>
+          <div style="text-align:right">
+            <div class="ss-label">Starting From</div>
+            <div class="ss-price" id="ss-price">—</div>
+          </div>
+        </div>
+
+        <div class="btn-row">
+          <div></div>
+          <button class="btn-primary" id="step1-next" onclick="goToStep(2)" disabled>Continue → Vehicle Details</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ STEP 2 — VEHICLE ═══ -->
+  <div class="panel" id="panel-2">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-header-icon">🚗</div>
+        <div>
+          <div class="card-header-title">Your Vehicle</div>
+          <div class="card-header-sub">We need these details to prepare for your service</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="form-section-title">Vehicle Type</div>
+        <div class="vehicle-type-grid">
+          <div class="vtype" onclick="selectVType(this,'Sedan/Coupe')"><div class="vtype-icon">🚗</div><div class="vtype-label">Sedan / Coupe</div></div>
+          <div class="vtype" onclick="selectVType(this,'SUV/Crossover')"><div class="vtype-icon">🚙</div><div class="vtype-label">SUV / Crossover</div></div>
+          <div class="vtype" onclick="selectVType(this,'Truck')"><div class="vtype-icon">🛻</div><div class="vtype-label">Truck</div></div>
+          <div class="vtype" onclick="selectVType(this,'Van/Minivan')"><div class="vtype-icon">🚐</div><div class="vtype-label">Van / Minivan</div></div>
+        </div>
+        <div class="form-section-title" style="margin-top:8px;">Vehicle Details</div>
+        <div class="form-grid three">
+          <div class="form-group">
+            <label class="f-label">Year <span class="f-required">*</span></label>
+            <input class="f-inp" id="v-year" type="text" placeholder="2022" maxlength="4"/>
+            <span class="f-error" id="err-v-year">Please enter vehicle year</span>
+          </div>
+          <div class="form-group">
+            <label class="f-label">Make <span class="f-required">*</span></label>
+            <input class="f-inp" id="v-make" type="text" placeholder="BMW"/>
+            <span class="f-error" id="err-v-make">Please enter vehicle make</span>
+          </div>
+          <div class="form-group">
+            <label class="f-label">Model <span class="f-required">*</span></label>
+            <input class="f-inp" id="v-model" type="text" placeholder="X5"/>
+            <span class="f-error" id="err-v-model">Please enter vehicle model</span>
+          </div>
+        </div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="f-label">Color</label>
+            <input class="f-inp" id="v-color" type="text" placeholder="Mineral White"/>
+          </div>
+          <div class="form-group">
+            <label class="f-label">License Plate</label>
+            <input class="f-inp" id="v-plate" type="text" placeholder="MD · ABC1234"/>
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="f-label">Special Notes About Your Vehicle</label>
+          <textarea class="f-ta" id="v-notes" placeholder="Existing tint to remove, paint condition, specific concerns, tint % preference..."></textarea>
+        </div>
+        <div class="btn-row">
+          <button class="btn-back" onclick="goToStep(1)">← Back</button>
+          <button class="btn-primary" onclick="validateStep2()">Continue → Your Info</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ STEP 3 — CUSTOMER INFO ═══ -->
+  <div class="panel" id="panel-3">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-header-icon">👤</div>
+        <div>
+          <div class="card-header-title">Your Information</div>
+          <div class="card-header-sub">We'll use this to confirm your booking and send updates</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="form-section-title">Contact Details</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="f-label">First Name <span class="f-required">*</span></label>
+            <input class="f-inp" id="c-first" type="text" placeholder="John"/>
+            <span class="f-error" id="err-c-first">Please enter your first name</span>
+          </div>
+          <div class="form-group">
+            <label class="f-label">Last Name <span class="f-required">*</span></label>
+            <input class="f-inp" id="c-last" type="text" placeholder="Smith"/>
+            <span class="f-error" id="err-c-last">Please enter your last name</span>
+          </div>
+          <div class="form-group">
+            <label class="f-label">Phone Number <span class="f-required">*</span></label>
+            <input class="f-inp" id="c-phone" type="tel" placeholder="(410) 555-0000"/>
+            <span class="f-hint">We'll send appointment updates via SMS</span>
+            <span class="f-error" id="err-c-phone">Please enter a valid phone number</span>
+          </div>
+          <div class="form-group">
+            <label class="f-label">Email Address <span class="f-required">*</span></label>
+            <input class="f-inp" id="c-email" type="email" placeholder="john@email.com"/>
+            <span class="f-hint">Confirmation + receipt sent here</span>
+            <span class="f-error" id="err-c-email">Please enter a valid email</span>
+          </div>
+        </div>
+        <div class="form-section-title">Address (Optional)</div>
+        <div class="form-grid">
+          <div class="form-group full">
+            <label class="f-label">Street Address</label>
+            <input class="f-inp" id="c-addr" type="text" placeholder="123 Main St, Odenton, MD"/>
+          </div>
+        </div>
+        <div class="btn-row">
+          <button class="btn-back" onclick="goToStep(2)">← Back</button>
+          <button class="btn-primary" onclick="validateStep3()">Continue → Date &amp; Time</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ STEP 4 — DATE & TIME ═══ -->
+  <div class="panel" id="panel-4">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-header-icon">📅</div>
+        <div>
+          <div class="card-header-title">Pick a Date &amp; Time</div>
+          <div class="card-header-sub">Mon–Fri 9AM–7PM · Saturday 9AM–4PM · Sunday Closed</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="datetime-grid">
+          <div class="form-group">
+            <label class="f-label">Preferred Date <span class="f-required">*</span></label>
+            <input class="f-inp" id="dt-date" type="date"/>
+            <span class="f-hint">Select Mon–Sat only</span>
+            <span class="f-error" id="err-dt-date">Please select a valid date (Mon–Sat)</span>
+          </div>
+          <div class="form-group">
+            <label class="f-label">Preferred Time <span class="f-required">*</span></label>
+            <select class="f-sel" id="dt-time">
+              <option value="">Select time...</option>
+              <option>9:00 AM</option><option>9:30 AM</option>
+              <option>10:00 AM</option><option>10:30 AM</option>
+              <option>11:00 AM</option><option>11:30 AM</option>
+              <option>12:00 PM</option><option>12:30 PM</option>
+              <option>1:00 PM</option><option>1:30 PM</option>
+              <option>2:00 PM</option><option>2:30 PM</option>
+              <option>3:00 PM</option><option>3:30 PM</option>
+              <option>4:00 PM</option><option>5:00 PM</option>
+              <option>6:00 PM</option>
+            </select>
+            <span class="f-error" id="err-dt-time">Please select a time</span>
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom:20px;">
+          <label class="f-label">How did you hear about us?</label>
+          <select class="f-sel" id="dt-ref">
+            <option value="">Select...</option>
+            <option>Google Search</option>
+            <option>Google Maps</option>
+            <option>Instagram</option>
+            <option>Facebook</option>
+            <option>Friend / Referral</option>
+            <option>Saw the shop</option>
+            <option>Returning customer</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div style="background:rgba(240,180,41,.1);border:1px solid rgba(240,180,41,.3);border-radius:6px;padding:14px 16px;font-size:13px;color:#555;margin-bottom:8px;">
+          <strong style="color:#8a6000;">📋 Good to know:</strong> We'll confirm your appointment within 1 hour during business hours. For same-day bookings please call <a href="tel:4106742430" style="color:var(--red);font-weight:700;">(410) 674-2430</a>.
+        </div>
+        <div class="btn-row">
+          <button class="btn-back" onclick="goToStep(3)">← Back</button>
+          <button class="btn-primary" onclick="validateStep4()">Continue → Review &amp; Confirm</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ STEP 5 — REVIEW ═══ -->
+  <div class="panel" id="panel-5">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-header-icon">📋</div>
+        <div>
+          <div class="card-header-title">Review Your Booking</div>
+          <div class="card-header-sub">Double-check everything before we confirm</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="review-section">
+          <div class="form-section-title">Service</div>
+          <div class="review-row"><span class="rr-label">Service</span><span class="rr-value" id="rev-service">—</span></div>
+          <div class="review-row"><span class="rr-label">Option / Variant</span><span class="rr-value" id="rev-variant">—</span></div>
+        </div>
+        <div class="review-section">
+          <div class="form-section-title">Vehicle</div>
+          <div class="review-row"><span class="rr-label">Vehicle</span><span class="rr-value" id="rev-vehicle">—</span></div>
+          <div class="review-row"><span class="rr-label">Type</span><span class="rr-value" id="rev-vtype">—</span></div>
+          <div class="review-row" id="rev-plate-row"><span class="rr-label">Plate</span><span class="rr-value" id="rev-plate">—</span></div>
+        </div>
+        <div class="review-section">
+          <div class="form-section-title">Your Info</div>
+          <div class="review-row"><span class="rr-label">Name</span><span class="rr-value" id="rev-name">—</span></div>
+          <div class="review-row"><span class="rr-label">Phone</span><span class="rr-value" id="rev-phone">—</span></div>
+          <div class="review-row"><span class="rr-label">Email</span><span class="rr-value" id="rev-email">—</span></div>
+        </div>
+        <div class="review-section">
+          <div class="form-section-title">Appointment</div>
+          <div class="review-row"><span class="rr-label">Date</span><span class="rr-value" id="rev-date">—</span></div>
+          <div class="review-row"><span class="rr-label">Time</span><span class="rr-value" id="rev-time">—</span></div>
+          <div class="review-row"><span class="rr-label">Location</span><span class="rr-value">395 Mt Vernon Ave, Odenton, MD 21113</span></div>
+        </div>
+        <div class="review-total">
+          <div>
+            <div class="rt-label">Estimated Price</div>
+            <div class="rt-note">Final price confirmed after vehicle inspection</div>
+          </div>
+          <div class="rt-price" id="rev-price">—</div>
+        </div>
+        <div class="policy-box">
+          <strong>Cancellation Policy:</strong> Please provide at least 24 hours notice to reschedule or cancel. Same-day cancellations may incur a $25 fee. Call us at (410) 674-2430 to make changes.<br/><br/>
+          <strong>Price Note:</strong> All prices are estimates and may vary based on vehicle condition upon inspection. We'll notify you of any changes before starting work.
+        </div>
+        <div class="consent-row">
+          <input type="checkbox" class="consent-cb" id="consent-cb" onchange="document.getElementById('confirm-btn').disabled = !this.checked"/>
+          <label for="consent-cb" class="consent-text">I agree to the cancellation policy and understand that final pricing may vary after vehicle inspection. I consent to receive SMS and email updates about my appointment from Dynamic Detailing &amp; Tint.</label>
+        </div>
+        <div class="btn-row">
+          <button class="btn-back" onclick="goToStep(4)">← Back</button>
+          <button class="btn-primary" id="confirm-btn" onclick="submitBooking()" disabled>✓ Confirm Booking</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ STEP 6 — CONFIRMED ═══ -->
+  <div class="panel" id="panel-6">
+    <div class="card">
+      <div class="card-body">
+        <div class="confirm-wrap">
+          <div class="confirm-icon">✅</div>
+          <div class="confirm-title">You're Booked!</div>
+          <p class="confirm-sub">Your appointment request has been received. We'll confirm within 1 hour during business hours. Check your phone and email for confirmation.</p>
+          <div class="confirm-id">Booking ID: <span id="booking-id">—</span></div>
+
+          <div class="confirm-details" id="confirm-details">
+            <!-- Filled by JS -->
+          </div>
+
+          <!-- Notification preview -->
+          <div class="notif-preview">
+            <div class="np-header">
+              <div class="np-header-icon">📬</div>
+              <div class="np-header-title">Notifications Sent To You</div>
+            </div>
+            <div class="np-label">SMS (Text Message)</div>
+            <div class="np-phone" id="preview-sms">Loading...</div>
+            <div class="np-label" style="margin-top:10px;">Email</div>
+            <div class="np-email" id="preview-email">Loading...</div>
+          </div>
+
+          <!-- What happens next -->
+          <div class="timeline" style="margin-top:24px;">
+            <div class="tl-item">
+              <div class="tl-dot">📞</div>
+              <div class="tl-content">
+                <div class="tl-title">We confirm your appointment</div>
+                <div class="tl-desc">Within 1 hour during business hours — you'll get an SMS &amp; email confirmation.</div>
+              </div>
+            </div>
+            <div class="tl-item">
+              <div class="tl-dot">🚗</div>
+              <div class="tl-content">
+                <div class="tl-title">Drop off your vehicle</div>
+                <div class="tl-desc">Bring your car to 395 Mt Vernon Ave, Odenton on your appointment date.</div>
+              </div>
+            </div>
+            <div class="tl-item">
+              <div class="tl-dot">🔔</div>
+              <div class="tl-content">
+                <div class="tl-title">Job complete notification</div>
+                <div class="tl-desc">When your service is done, you'll instantly receive an SMS &amp; email to come pick up your vehicle.</div>
+              </div>
+            </div>
+            <div class="tl-item">
+              <div class="tl-dot">📅</div>
+              <div class="tl-content">
+                <div class="tl-title">1-Year Maintenance Reminder</div>
+                <div class="tl-desc">We'll automatically send you a reminder 1 year from your service date to keep your car in top condition.</div>
+              </div>
+            </div>
+          </div>
+
+          <div style="margin-top:24px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+            <a href="tel:4106742430" class="btn-primary">📞 Call Us</a>
+            <a href="dynamic-detailing-v3.html" class="btn-back" style="border-color:var(--lgray);">← Back to Website</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /booking-wrap -->
+
+<!-- LOADER -->
+<div class="loader-overlay" id="loader">
+  <div class="loader"></div>
+  <div class="loader-text" id="loader-text">Submitting your booking...</div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+/* ════════════════════════════════════════════════════════════
+   CONFIGURATION — Replace with real keys before deploying
+   ════════════════════════════════════════════════════════════ */
+const CONFIG = {
+  // ── SENDGRID ──────────────────────────────────────────────
+  SENDGRID_API_KEY: 'YOUR_SENDGRID_API_KEY',        // Replace
+  FROM_EMAIL: 'bookings@dynamicmdetailing.com',     // Replace with your verified sender
+  ADMIN_EMAIL: 'admin@dynamicmdetailing.com',       // Replace
+
+  // ── TWILIO ────────────────────────────────────────────────
+  TWILIO_ACCOUNT_SID: 'YOUR_TWILIO_ACCOUNT_SID',   // Replace
+  TWILIO_AUTH_TOKEN:  'YOUR_TWILIO_AUTH_TOKEN',     // Replace
+  TWILIO_FROM_NUMBER: '+14105550000',               // Replace with your Twilio number
+  SHOP_PHONE: '+14106742430',                       // Dynamic Detailing shop number
+
+  // ── ADMIN BRIDGE ──────────────────────────────────────────
+  // This key is shared with your internal dashboard
+  // When admin marks a job done, it calls BookingBridge.jobComplete(bookingId)
+  ADMIN_BRIDGE_SECRET: 'DDT_BRIDGE_2026',
+
+  // ── BUSINESS INFO ─────────────────────────────────────────
+  BUSINESS_NAME: 'Dynamic Detailing & Tint',
+  BUSINESS_ADDRESS: '395 Mt Vernon Ave, Odenton, MD 21113',
+  BUSINESS_PHONE: '(410) 674-2430',
+  WEBSITE: 'https://dynamicmdetailing.com'
+};
+
+/* ════════════════════════════════════════════════════════════
+   BOOKING STATE
+   ════════════════════════════════════════════════════════════ */
+const booking = {
+  service: '',
+  servicePrice: '',
+  variant: '',
+  variantPrice: '',
+  vehicleType: '',
+  vehicleYear: '',
+  vehicleMake: '',
+  vehicleModel: '',
+  vehicleColor: '',
+  vehiclePlate: '',
+  vehicleNotes: '',
+  firstName: '',
+  lastName: '',
+  phone: '',
+  email: '',
+  address: '',
+  date: '',
+  time: '',
+  referral: '',
+  bookingId: '',
+  status: 'pending', // pending → confirmed → in_progress → completed
+  createdAt: null,
+  completedAt: null,
+  reminderScheduledFor: null
+};
+
+/* ════════════════════════════════════════════════════════════
+   NAVIGATION
+   ════════════════════════════════════════════════════════════ */
+let currentStep = 1;
+
+function goToStep(n) {
+  document.getElementById(`panel-${currentStep}`).classList.remove('active');
+  document.getElementById(`step${currentStep}`)?.classList.remove('active');
+
+  currentStep = n;
+  document.getElementById(`panel-${n}`).classList.add('active');
+
+  // Update progress dots
+  for(let i = 1; i <= 6; i++) {
+    const s = document.getElementById(`step${i}`);
+    if(!s) continue;
+    s.classList.remove('active','done');
+    if(i < n) { s.classList.add('done'); s.querySelector('.step-dot').textContent = '✓'; }
+    else if(i === n) { s.classList.add('active'); s.querySelector('.step-dot').textContent = i; }
+    else { s.querySelector('.step-dot').textContent = i; }
+    const conn = document.getElementById(`conn${i}`);
+    if(conn) conn.classList.toggle('done', i < n);
+  }
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+/* ════════════════════════════════════════════════════════════
+   STEP 1 — SERVICE SELECTION
+   ════════════════════════════════════════════════════════════ */
+function showSvcCat(cat, btn) {
+  document.querySelectorAll('.svc-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.service-options').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.svc-option').forEach(o => o.classList.remove('selected'));
+  document.querySelectorAll('.variant-section').forEach(v => v.classList.remove('show'));
+  btn.classList.add('active');
+  document.getElementById('svc-' + cat).classList.add('active');
+  // Reset selection
+  booking.service = ''; booking.servicePrice = '';
+  booking.variant = ''; booking.variantPrice = '';
+  document.getElementById('selected-summary').classList.remove('show');
+  document.getElementById('step1-next').disabled = true;
+}
+
+function selectService(el, name, price) {
+  document.querySelectorAll('.svc-option').forEach(o => o.classList.remove('selected'));
+  document.querySelectorAll('.variant-section').forEach(v => v.classList.remove('show'));
+  document.querySelectorAll('.variant-pill').forEach(p => p.classList.remove('selected'));
+  el.classList.add('selected');
+  booking.service = name;
+  booking.servicePrice = price;
+  booking.variant = '';
+  booking.variantPrice = '';
+
+  // Show variant section if exists
+  const vs = document.getElementById('vs-' + name);
+  if(vs) { vs.classList.add('show'); }
+
+  updateSummary();
+
+  // Enable next only if no variants needed, or variant already selected
+  document.getElementById('step1-next').disabled = !!vs;
+  if(!vs) enableNext();
+}
+
+function selectVariant(el, price) {
+  const vs = el.closest('.variant-section');
+  vs.querySelectorAll('.variant-pill').forEach(p => p.classList.remove('selected'));
+  el.classList.add('selected');
+  booking.variantPrice = price;
+  booking.variant = el.querySelector('span:first-child').textContent;
+  updateSummary();
+  enableNext();
+}
+
+function enableNext() {
+  document.getElementById('step1-next').disabled = false;
+}
+
+function updateSummary() {
+  const s = document.getElementById('selected-summary');
+  s.classList.add('show');
+  document.getElementById('ss-name').textContent = booking.service;
+  document.getElementById('ss-variant').textContent = booking.variant || '';
+  document.getElementById('ss-price').textContent = booking.variantPrice || booking.servicePrice;
+}
+
+/* ════════════════════════════════════════════════════════════
+   STEP 2 — VEHICLE
+   ════════════════════════════════════════════════════════════ */
+function selectVType(el, type) {
+  document.querySelectorAll('.vtype').forEach(v => v.classList.remove('selected'));
+  el.classList.add('selected');
+  booking.vehicleType = type;
+}
+
+function validateStep2() {
+  const year = document.getElementById('v-year').value.trim();
+  const make = document.getElementById('v-make').value.trim();
+  const model = document.getElementById('v-model').value.trim();
+  let ok = true;
+  if(!year || year.length !== 4) { showErr('v-year'); ok = false; } else hideErr('v-year');
+  if(!make) { showErr('v-make'); ok = false; } else hideErr('v-make');
+  if(!model) { showErr('v-model'); ok = false; } else hideErr('v-model');
+  if(!ok) return;
+  booking.vehicleYear = year;
+  booking.vehicleMake = make;
+  booking.vehicleModel = model;
+  booking.vehicleColor = document.getElementById('v-color').value.trim();
+  booking.vehiclePlate = document.getElementById('v-plate').value.trim();
+  booking.vehicleNotes = document.getElementById('v-notes').value.trim();
+  goToStep(3);
+}
+
+/* ════════════════════════════════════════════════════════════
+   STEP 3 — CUSTOMER INFO
+   ════════════════════════════════════════════════════════════ */
+function validateStep3() {
+  const first = document.getElementById('c-first').value.trim();
+  const last = document.getElementById('c-last').value.trim();
+  const phone = document.getElementById('c-phone').value.trim();
+  const email = document.getElementById('c-email').value.trim();
+  let ok = true;
+  if(!first) { showErr('c-first'); ok = false; } else hideErr('c-first');
+  if(!last) { showErr('c-last'); ok = false; } else hideErr('c-last');
+  if(!phone || phone.length < 10) { showErr('c-phone'); ok = false; } else hideErr('c-phone');
+  if(!email || !email.includes('@')) { showErr('c-email'); ok = false; } else hideErr('c-email');
+  if(!ok) return;
+  booking.firstName = first;
+  booking.lastName = last;
+  booking.phone = phone;
+  booking.email = email;
+  booking.address = document.getElementById('c-addr').value.trim();
+  goToStep(4);
+}
+
+/* ════════════════════════════════════════════════════════════
+   STEP 4 — DATE & TIME
+   ════════════════════════════════════════════════════════════ */
+// Set min date to tomorrow
+window.addEventListener('DOMContentLoaded', () => {
+  const dt = document.getElementById('dt-date');
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  dt.min = tomorrow.toISOString().split('T')[0];
+});
+
+function validateStep4() {
+  const date = document.getElementById('dt-date').value;
+  const time = document.getElementById('dt-time').value;
+  let ok = true;
+  if(!date) { showErr('dt-date'); ok = false; } else {
+    const dow = new Date(date + 'T12:00:00').getDay(); // 0=Sun, 6=Sat
+    if(dow === 0) { showErr('dt-date'); document.getElementById('err-dt-date').textContent='We are closed on Sundays'; ok = false; }
+    else hideErr('dt-date');
+  }
+  if(!time) { showErr('dt-time'); ok = false; } else hideErr('dt-time');
+  if(!ok) return;
+  booking.date = date;
+  booking.time = time;
+  booking.referral = document.getElementById('dt-ref').value;
+  populateReview();
+  goToStep(5);
+}
+
+/* ════════════════════════════════════════════════════════════
+   STEP 5 — REVIEW
+   ════════════════════════════════════════════════════════════ */
+function populateReview() {
+  document.getElementById('rev-service').textContent = booking.service;
+  document.getElementById('rev-variant').textContent = booking.variant || 'N/A';
+  document.getElementById('rev-vehicle').textContent = `${booking.vehicleYear} ${booking.vehicleMake} ${booking.vehicleModel} ${booking.vehicleColor ? '(' + booking.vehicleColor + ')' : ''}`.trim();
+  document.getElementById('rev-vtype').textContent = booking.vehicleType || 'Not specified';
+  document.getElementById('rev-plate').textContent = booking.vehiclePlate || 'Not provided';
+  document.getElementById('rev-name').textContent = `${booking.firstName} ${booking.lastName}`;
+  document.getElementById('rev-phone').textContent = booking.phone;
+  document.getElementById('rev-email').textContent = booking.email;
+  const d = new Date(booking.date + 'T12:00:00');
+  document.getElementById('rev-date').textContent = d.toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  document.getElementById('rev-time').textContent = booking.time;
+  document.getElementById('rev-price').textContent = booking.variantPrice || booking.servicePrice;
+}
+
+/* ════════════════════════════════════════════════════════════
+   STEP 6 — SUBMIT BOOKING
+   ════════════════════════════════════════════════════════════ */
+async function submitBooking() {
+  // Generate booking ID
+  booking.bookingId = 'DDT-' + Date.now().toString(36).toUpperCase();
+  booking.createdAt = new Date().toISOString();
+  booking.status = 'pending';
+
+  // Schedule 1-year reminder date
+  const reminderDate = new Date(booking.date);
+  reminderDate.setFullYear(reminderDate.getFullYear() + 1);
+  booking.reminderScheduledFor = reminderDate.toISOString();
+
+  showLoader('Sending your confirmation...');
+
+  try {
+    // 1. Save booking to local storage (replace with your DB call)
+    saveBookingToStorage(booking);
+
+    // 2. Send customer confirmation SMS
+    await sendSMS(booking.phone, buildCustomerConfirmationSMS(booking));
+
+    // 3. Send customer confirmation email
+    await sendEmail(booking.email, `Booking Confirmed – ${booking.service}`, buildCustomerConfirmationEmail(booking));
+
+    // 4. Notify admin via SMS
+    await sendSMS(CONFIG.SHOP_PHONE, buildAdminNotificationSMS(booking));
+
+    // 5. Notify admin via email
+    await sendEmail(CONFIG.ADMIN_EMAIL, `New Booking: ${booking.firstName} ${booking.lastName} – ${booking.service}`, buildAdminEmail(booking));
+
+    // 6. Push to admin dashboard bridge
+    BookingBridge.newBooking(booking);
+
+    hideLoader();
+    goToStep(6);
+    populateConfirmation();
+
+  } catch(err) {
+    hideLoader();
+    showToast('Something went wrong. Please call (410) 674-2430', 'error');
+    console.error('Booking error:', err);
+  }
+}
+
+/* ════════════════════════════════════════════════════════════
+   MESSAGE BUILDERS
+   ════════════════════════════════════════════════════════════ */
+
+function buildCustomerConfirmationSMS(b) {
+  return `Hi ${b.firstName}! 🚗 Your appointment at Dynamic Detailing & Tint is CONFIRMED.\n\n📋 Service: ${b.service}${b.variant ? ' – ' + b.variant : ''}\n📅 Date: ${formatDate(b.date)} at ${b.time}\n📍 395 Mt Vernon Ave, Odenton MD\n\nSee you then! Questions? Call (410) 674-2430\n\nBooking ID: ${b.bookingId}`;
+}
+
+function buildCustomerConfirmationEmail(b) {
+  return `
+  <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#fff;">
+    <div style="background:#c0392b;padding:24px 32px;border-radius:8px 8px 0 0;">
+      <h1 style="font-family:Impact,sans-serif;color:#fff;letter-spacing:2px;margin:0;font-size:28px;">DYNAMIC DETAILING & TINT</h1>
+      <p style="color:rgba(255,255,255,.8);margin:4px 0 0;font-size:13px;">395 Mt Vernon Ave, Odenton, MD · (410) 674-2430</p>
+    </div>
+    <div style="padding:32px;border:1px solid #e5e5e5;border-top:none;">
+      <h2 style="color:#111;font-size:22px;margin:0 0 8px;">✅ Booking Confirmed!</h2>
+      <p style="color:#666;margin:0 0 24px;">Hi ${b.firstName}, your appointment is confirmed. We'll see you soon!</p>
+      <div style="background:#f7f7f7;border-radius:8px;padding:20px;margin-bottom:24px;">
+        <table style="width:100%;border-collapse:collapse;font-size:14px;">
+          <tr><td style="padding:8px 0;color:#888;font-weight:600;text-transform:uppercase;font-size:11px;letter-spacing:1px;border-bottom:1px solid #e5e5e5;">Booking ID</td><td style="padding:8px 0;color:#c0392b;font-weight:700;border-bottom:1px solid #e5e5e5;">${b.bookingId}</td></tr>
+          <tr><td style="padding:8px 0;color:#888;font-weight:600;text-transform:uppercase;font-size:11px;letter-spacing:1px;border-bottom:1px solid #e5e5e5;">Service</td><td style="padding:8px 0;font-weight:600;border-bottom:1px solid #e5e5e5;">${b.service}${b.variant ? ' – ' + b.variant : ''}</td></tr>
+          <tr><td style="padding:8px 0;color:#888;font-weight:600;text-transform:uppercase;font-size:11px;letter-spacing:1px;border-bottom:1px solid #e5e5e5;">Vehicle</td><td style="padding:8px 0;font-weight:600;border-bottom:1px solid #e5e5e5;">${b.vehicleYear} ${b.vehicleMake} ${b.vehicleModel}</td></tr>
+          <tr><td style="padding:8px 0;color:#888;font-weight:600;text-transform:uppercase;font-size:11px;letter-spacing:1px;border-bottom:1px solid #e5e5e5;">Date</td><td style="padding:8px 0;font-weight:600;border-bottom:1px solid #e5e5e5;">${formatDate(b.date)}</td></tr>
+          <tr><td style="padding:8px 0;color:#888;font-weight:600;text-transform:uppercase;font-size:11px;letter-spacing:1px;border-bottom:1px solid #e5e5e5;">Time</td><td style="padding:8px 0;font-weight:600;border-bottom:1px solid #e5e5e5;">${b.time}</td></tr>
+          <tr><td style="padding:8px 0;color:#888;font-weight:600;text-transform:uppercase;font-size:11px;letter-spacing:1px;">Estimated Price</td><td style="padding:8px 0;font-weight:700;color:#c0392b;">${b.variantPrice || b.servicePrice}</td></tr>
+        </table>
+      </div>
+      <div style="background:#1a1a1a;border-radius:6px;padding:16px 20px;margin-bottom:24px;">
+        <p style="color:rgba(255,255,255,.6);font-size:12px;margin:0 0 6px;text-transform:uppercase;letter-spacing:1px;">📍 Location</p>
+        <p style="color:#fff;font-size:15px;font-weight:600;margin:0;">395 Mt Vernon Ave, Odenton, MD 21113</p>
+      </div>
+      <p style="color:#666;font-size:13px;line-height:1.6;">You'll receive an SMS and email as soon as your vehicle is ready for pickup. You'll also receive a <strong>1-year maintenance reminder</strong> on ${formatDate(b.reminderScheduledFor?.split('T')[0])} to keep your vehicle in top condition.</p>
+      <div style="border-top:1px solid #e5e5e5;margin-top:24px;padding-top:16px;text-align:center;color:#aaa;font-size:12px;">
+        Dynamic Detailing & Tint · (410) 674-2430 · dynamicmdetailing.com
+      </div>
+    </div>
+  </div>`;
+}
+
+function buildAdminNotificationSMS(b) {
+  return `🔔 NEW BOOKING [${b.bookingId}]\n👤 ${b.firstName} ${b.lastName}\n📞 ${b.phone}\n🚗 ${b.vehicleYear} ${b.vehicleMake} ${b.vehicleModel}\n🔧 ${b.service}${b.variant ? ' – ' + b.variant : ''}\n📅 ${formatDate(b.date)} @ ${b.time}\n💰 ${b.variantPrice || b.servicePrice}`;
+}
+
+function buildAdminEmail(b) {
+  return `<div style="font-family:Arial,sans-serif;max-width:600px;background:#fff;padding:24px;">
+    <h2 style="color:#c0392b;">🔔 New Booking — ${b.bookingId}</h2>
+    <table style="width:100%;border-collapse:collapse;font-size:14px;">
+      <tr><td style="padding:6px;color:#888;">Customer</td><td style="padding:6px;font-weight:600;">${b.firstName} ${b.lastName}</td></tr>
+      <tr style="background:#f7f7f7;"><td style="padding:6px;color:#888;">Phone</td><td style="padding:6px;"><a href="tel:${b.phone}">${b.phone}</a></td></tr>
+      <tr><td style="padding:6px;color:#888;">Email</td><td style="padding:6px;">${b.email}</td></tr>
+      <tr style="background:#f7f7f7;"><td style="padding:6px;color:#888;">Service</td><td style="padding:6px;font-weight:600;">${b.service}${b.variant ? ' – ' + b.variant : ''}</td></tr>
+      <tr><td style="padding:6px;color:#888;">Vehicle</td><td style="padding:6px;">${b.vehicleYear} ${b.vehicleMake} ${b.vehicleModel} (${b.vehicleType || 'unspecified'})</td></tr>
+      <tr style="background:#f7f7f7;"><td style="padding:6px;color:#888;">Plate</td><td style="padding:6px;">${b.vehiclePlate || 'N/A'}</td></tr>
+      <tr><td style="padding:6px;color:#888;">Date</td><td style="padding:6px;font-weight:600;">${formatDate(b.date)} @ ${b.time}</td></tr>
+      <tr style="background:#f7f7f7;"><td style="padding:6px;color:#888;">Price</td><td style="padding:6px;color:#c0392b;font-weight:700;">${b.variantPrice || b.servicePrice}</td></tr>
+      <tr><td style="padding:6px;color:#888;">Notes</td><td style="padding:6px;">${b.vehicleNotes || 'None'}</td></tr>
+      <tr style="background:#f7f7f7;"><td style="padding:6px;color:#888;">1-yr Reminder</td><td style="padding:6px;">${formatDate(b.reminderScheduledFor?.split('T')[0])}</td></tr>
+    </table>
+    <p style="margin-top:20px;padding:12px;background:#1a1a1a;color:#fff;border-radius:6px;font-size:13px;">
+      To mark this job complete and trigger customer pickup notification, use your admin dashboard → Jobs → ${b.bookingId} → Mark Complete
+    </p>
+  </div>`;
+}
+
+// ── JOB COMPLETE messages (called from admin dashboard) ──
+function buildJobCompleteSMS(b) {
+  return `Hi ${b.firstName}! 🎉 Your ${b.vehicleYear} ${b.vehicleMake} ${b.vehicleModel} is READY for pickup!\n\n✅ Service: ${b.service}${b.variant ? ' – ' + b.variant : ''}\n📍 395 Mt Vernon Ave, Odenton MD\n🕐 We're open until ${new Date().getHours() < 16 ? '7PM today' : '9AM tomorrow'}\n\nQuestions? (410) 674-2430\n\n⭐ How'd we do? Leave a review: g.page/dynamicdetailandtint`;
+}
+
+function buildJobCompleteEmail(b) {
+  return `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#fff;">
+    <div style="background:#16a34a;padding:24px 32px;border-radius:8px 8px 0 0;">
+      <h1 style="font-family:Impact,sans-serif;color:#fff;letter-spacing:2px;margin:0;font-size:26px;">YOUR CAR IS READY! 🎉</h1>
+      <p style="color:rgba(255,255,255,.8);font-size:13px;margin:4px 0 0;">Dynamic Detailing & Tint · (410) 674-2430</p>
+    </div>
+    <div style="padding:32px;border:1px solid #e5e5e5;border-top:none;">
+      <p style="font-size:16px;color:#111;">Hi <strong>${b.firstName}</strong>, your <strong>${b.vehicleYear} ${b.vehicleMake} ${b.vehicleModel}</strong> is done and ready for pickup!</p>
+      <div style="background:#f7f7f7;border-radius:8px;padding:16px 20px;margin:20px 0;">
+        <p style="margin:0;font-size:14px;"><strong>Service Completed:</strong> ${b.service}${b.variant ? ' – ' + b.variant : ''}</p>
+        <p style="margin:8px 0 0;font-size:14px;"><strong>📍 Pickup:</strong> 395 Mt Vernon Ave, Odenton, MD 21113</p>
+      </div>
+      <p style="color:#666;font-size:13px;">We hope you love the results! Please <a href="https://g.page/dynamicdetailandtint" style="color:#c0392b;">leave us a Google review</a> — it means the world to us. 🙏</p>
+      <p style="background:#fff3cd;padding:12px 16px;border-radius:6px;font-size:13px;color:#856404;">📅 <strong>Maintenance Reminder:</strong> We'll send you a reminder on <strong>${formatDate(b.reminderScheduledFor?.split('T')[0])}</strong> for your annual service check-in.</p>
+    </div>
+  </div>`;
+}
+
+// ── 1-YEAR REMINDER messages ──
+function buildReminderSMS(b) {
+  return `Hi ${b.firstName}! 🚗 It's been 1 year since your ${b.service} at Dynamic Detailing & Tint.\n\nTime for your annual maintenance check! Your ${b.vehicleYear} ${b.vehicleMake} ${b.vehicleModel} deserves some love. 💪\n\nBook now: dynamicmdetailing.com\n📞 (410) 674-2430\n\n– Dynamic Detailing & Tint, Odenton MD`;
+}
+
+function buildReminderEmail(b) {
+  return `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#fff;">
+    <div style="background:#c0392b;padding:24px 32px;border-radius:8px 8px 0 0;">
+      <h1 style="font-family:Impact,sans-serif;color:#fff;letter-spacing:2px;margin:0;font-size:24px;">TIME FOR YOUR ANNUAL CHECK-IN! 📅</h1>
+    </div>
+    <div style="padding:32px;border:1px solid #e5e5e5;border-top:none;">
+      <p style="font-size:15px;">Hi <strong>${b.firstName}</strong>,</p>
+      <p style="color:#555;line-height:1.7;">It's been <strong>1 year</strong> since your <strong>${b.service}</strong> at Dynamic Detailing & Tint. Time to give your ${b.vehicleYear} ${b.vehicleMake} ${b.vehicleModel} some love and keep it in top shape!</p>
+      <div style="text-align:center;margin:28px 0;">
+        <a href="https://dynamicmdetailing.com/book" style="background:#c0392b;color:#fff;padding:14px 32px;border-radius:5px;font-weight:700;text-decoration:none;font-size:15px;display:inline-block;">Book Your Appointment</a>
+      </div>
+      <p style="color:#888;font-size:12px;text-align:center;">Or call us at (410) 674-2430 · 395 Mt Vernon Ave, Odenton, MD</p>
+    </div>
+  </div>`;
+}
+
+/* ════════════════════════════════════════════════════════════
+   SEND FUNCTIONS
+   ── These are wired for Twilio + SendGrid.
+   ── Replace CONFIG values at top of script.
+   ── For testing: currently logs to console + simulates success.
+   ════════════════════════════════════════════════════════════ */
+
+async function sendSMS(to, body) {
+  console.log(`[SMS → ${to}]\n${body}\n`);
+  // ── UNCOMMENT WHEN TWILIO IS CONFIGURED ──
+  // const sid = CONFIG.TWILIO_ACCOUNT_SID;
+  // const token = CONFIG.TWILIO_AUTH_TOKEN;
+  // if(sid === 'YOUR_TWILIO_ACCOUNT_SID') return; // not configured yet
+  // const res = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`, {
+  //   method: 'POST',
+  //   headers: {
+  //     'Authorization': 'Basic ' + btoa(`${sid}:${token}`),
+  //     'Content-Type': 'application/x-www-form-urlencoded'
+  //   },
+  //   body: new URLSearchParams({ To: to, From: CONFIG.TWILIO_FROM_NUMBER, Body: body })
+  // });
+  // return res.json();
+  return Promise.resolve({ status: 'mock-sent' });
+}
+
+async function sendEmail(to, subject, htmlBody) {
+  console.log(`[EMAIL → ${to}]\nSubject: ${subject}\n`);
+  // ── UNCOMMENT WHEN SENDGRID IS CONFIGURED ──
+  // if(CONFIG.SENDGRID_API_KEY === 'YOUR_SENDGRID_API_KEY') return;
+  // const res = await fetch('https://api.sendgrid.com/v3/mail/send', {
+  //   method: 'POST',
+  //   headers: {
+  //     'Authorization': `Bearer ${CONFIG.SENDGRID_API_KEY}`,
+  //     'Content-Type': 'application/json'
+  //   },
+  //   body: JSON.stringify({
+  //     personalizations: [{ to: [{ email: to }] }],
+  //     from: { email: CONFIG.FROM_EMAIL, name: CONFIG.BUSINESS_NAME },
+  //     subject: subject,
+  //     content: [{ type: 'text/html', value: htmlBody }]
+  //   })
+  // });
+  // return res;
+  return Promise.resolve({ status: 'mock-sent' });
+}
+
+/* ════════════════════════════════════════════════════════════
+   ADMIN BRIDGE
+   ── Your internal dashboard calls these functions.
+   ── Include this file's BookingBridge object in your dashboard.
+   ════════════════════════════════════════════════════════════ */
+const BookingBridge = {
+
+  // Called when new booking is submitted — pushes to admin dashboard
+  newBooking(b) {
+    const bookings = this._load();
+    bookings.push({...b});
+    this._save(bookings);
+    console.log('[BookingBridge] New booking saved:', b.bookingId);
+    // ── Replace with your real API endpoint ──
+    // fetch('/api/bookings', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(b) });
+  },
+
+  // ── ADMIN CALLS THIS when job is complete ──
+  // Usage from your dashboard: BookingBridge.jobComplete('DDT-XXXXXX')
+  async jobComplete(bookingId) {
+    const bookings = this._load();
+    const b = bookings.find(x => x.bookingId === bookingId);
+    if(!b) { console.error('[Bridge] Booking not found:', bookingId); return; }
+
+    b.status = 'completed';
+    b.completedAt = new Date().toISOString();
+    this._save(bookings);
+
+    console.log('[BookingBridge] Job complete:', bookingId, '→ sending notifications');
+
+    // 1. SMS to customer: job done, come pick up
+    await sendSMS(b.phone, buildJobCompleteSMS(b));
+
+    // 2. Email to customer: job done
+    await sendEmail(b.email, `Your ${b.vehicleMake} ${b.vehicleModel} is Ready for Pickup! 🎉`, buildJobCompleteEmail(b));
+
+    // 3. Schedule 1-year reminder
+    this._scheduleReminder(b);
+
+    console.log('[BookingBridge] ✅ Notifications sent for', bookingId);
+    return { success: true, bookingId };
+  },
+
+  // ── Schedules the 1-year reminder ──
+  // Uses setTimeout for demo. In production: use a cron job / scheduled task on your server.
+  _scheduleReminder(b) {
+    const reminderDate = new Date(b.reminderScheduledFor);
+    const msUntil = reminderDate.getTime() - Date.now();
+    console.log(`[BookingBridge] 1-Year reminder scheduled for ${b.firstName} on ${formatDate(b.reminderScheduledFor?.split('T')[0])} (${Math.round(msUntil/1000/60/60/24)} days from now)`);
+
+    // ── PRODUCTION: Replace with a server-side cron / scheduled job ──
+    // Example: POST to /api/schedule-reminder with { bookingId, sendAt: b.reminderScheduledFor }
+    // Your server then fires the reminder via Twilio + SendGrid on that date.
+
+    // For demo: fires immediately after 3 seconds (to show the preview)
+    // setTimeout(async () => {
+    //   await sendSMS(b.phone, buildReminderSMS(b));
+    //   await sendEmail(b.email, `Time for Your Annual Service! – Dynamic Detailing & Tint`, buildReminderEmail(b));
+    // }, msUntil);
+
+    // Save reminder to storage so your backend can pick it up
+    const reminders = JSON.parse(localStorage.getItem('ddt_reminders') || '[]');
+    reminders.push({ bookingId: b.bookingId, phone: b.phone, email: b.email, firstName: b.firstName, sendAt: b.reminderScheduledFor, service: b.service, vehicleYear: b.vehicleYear, vehicleMake: b.vehicleMake, vehicleModel: b.vehicleModel });
+    localStorage.setItem('ddt_reminders', JSON.stringify(reminders));
+  },
+
+  _load() { return JSON.parse(localStorage.getItem('ddt_bookings') || '[]'); },
+  _save(b) { localStorage.setItem('ddt_bookings', JSON.stringify(b)); },
+
+  // ── Helper for your dashboard to list all bookings ──
+  getAllBookings() { return this._load(); },
+  getBooking(id) { return this._load().find(b => b.bookingId === id); },
+  getPendingReminders() { return JSON.parse(localStorage.getItem('ddt_reminders') || '[]'); }
+};
+
+/* ════════════════════════════════════════════════════════════
+   CONFIRMATION PAGE
+   ════════════════════════════════════════════════════════════ */
+function populateConfirmation() {
+  document.getElementById('booking-id').textContent = booking.bookingId;
+  const d = formatDate(booking.date);
+  document.getElementById('confirm-details').innerHTML = `
+    <div class="cd-row"><span class="cd-label">Booking ID</span><span class="cd-value" style="color:var(--red);font-weight:700;">${booking.bookingId}</span></div>
+    <div class="cd-row"><span class="cd-label">Service</span><span class="cd-value">${booking.service}${booking.variant ? ' – ' + booking.variant : ''}</span></div>
+    <div class="cd-row"><span class="cd-label">Vehicle</span><span class="cd-value">${booking.vehicleYear} ${booking.vehicleMake} ${booking.vehicleModel}</span></div>
+    <div class="cd-row"><span class="cd-label">Date & Time</span><span class="cd-value">${d} at ${booking.time}</span></div>
+    <div class="cd-row"><span class="cd-label">Estimated Price</span><span class="cd-value" style="color:var(--red);">${booking.variantPrice || booking.servicePrice}</span></div>
+    <div class="cd-row"><span class="cd-label">1-yr Reminder</span><span class="cd-value">${formatDate(booking.reminderScheduledFor?.split('T')[0])}</span></div>
+  `;
+  document.getElementById('preview-sms').textContent = buildCustomerConfirmationSMS(booking);
+  document.getElementById('preview-email').textContent = `Subject: Booking Confirmed – ${booking.service}\nTo: ${booking.email}\n\n[Full HTML email sent — see console for preview]`;
+}
+
+/* ════════════════════════════════════════════════════════════
+   UTILITIES
+   ════════════════════════════════════════════════════════════ */
+function saveBookingToStorage(b) {
+  BookingBridge.newBooking(b);
+}
+
+function formatDate(dateStr) {
+  if(!dateStr) return '—';
+  const d = new Date(dateStr + (dateStr.includes('T') ? '' : 'T12:00:00'));
+  return d.toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+}
+
+function showErr(id) {
+  const inp = document.getElementById(id);
+  const err = document.getElementById('err-' + id);
+  if(inp) inp.classList.add('error');
+  if(err) err.classList.add('show');
+}
+
+function hideErr(id) {
+  const inp = document.getElementById(id);
+  const err = document.getElementById('err-' + id);
+  if(inp) inp.classList.remove('error');
+  if(err) err.classList.remove('show');
+}
+
+function showLoader(text) {
+  document.getElementById('loader-text').textContent = text || 'Loading...';
+  document.getElementById('loader').classList.add('show');
+}
+
+function hideLoader() {
+  document.getElementById('loader').classList.remove('show');
+}
+
+function showToast(msg, type='success') {
+  const t = document.getElementById('toast');
+  t.textContent = (type === 'success' ? '✓ ' : '✕ ') + msg;
+  t.className = 'toast show' + (type === 'error' ? ' error' : '');
+  setTimeout(() => t.classList.remove('show'), 4000);
+}
+
+// Clear errors on input
+document.querySelectorAll('.f-inp,.f-sel').forEach(el => {
+  el.addEventListener('input', () => { el.classList.remove('error'); const e = document.getElementById('err-' + el.id); if(e) e.classList.remove('show'); });
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,1671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Dynamic Detailing & Tint — Business Hub</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --black: #0a0a0a;
+    --dark: #111214;
+    --card: #16181c;
+    --border: #222428;
+    --accent: #00e5ff;
+    --accent2: #ff5722;
+    --gold: #ffc107;
+    --green: #00e676;
+    --red: #ff1744;
+    --text: #e8eaed;
+    --muted: #6b7280;
+    --font-display: 'Bebas Neue', sans-serif;
+    --font-body: 'DM Sans', sans-serif;
+    --font-mono: 'Space Mono', monospace;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--black);
+    color: var(--text);
+    font-family: var(--font-body);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* SIDEBAR */
+  .sidebar {
+    position: fixed;
+    left: 0; top: 0; bottom: 0;
+    width: 240px;
+    background: var(--dark);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    z-index: 100;
+  }
+
+  .logo-area {
+    padding: 24px 20px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo-name {
+    font-family: var(--font-display);
+    font-size: 22px;
+    letter-spacing: 1px;
+    color: var(--accent);
+    line-height: 1;
+  }
+
+  .logo-sub {
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+
+  .nav {
+    flex: 1;
+    padding: 16px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .nav-section {
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 12px 8px 6px;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-size: 14px;
+    color: var(--muted);
+    border: 1px solid transparent;
+  }
+
+  .nav-item:hover { background: #1e2026; color: var(--text); }
+  .nav-item.active {
+    background: rgba(0,229,255,0.08);
+    color: var(--accent);
+    border-color: rgba(0,229,255,0.2);
+  }
+
+  .nav-icon { font-size: 18px; width: 22px; text-align: center; }
+
+  .sidebar-footer {
+    padding: 16px 20px;
+    border-top: 1px solid var(--border);
+  }
+
+  .business-info {
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+
+  .status-dot {
+    display: inline-block;
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--green);
+    margin-right: 5px;
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  /* MAIN */
+  .main {
+    margin-left: 240px;
+    min-height: 100vh;
+  }
+
+  .topbar {
+    background: var(--dark);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+
+  .page-title {
+    font-family: var(--font-display);
+    font-size: 28px;
+    letter-spacing: 1px;
+    color: var(--text);
+  }
+
+  .topbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .btn {
+    padding: 8px 18px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.15s;
+    font-family: var(--font-body);
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: var(--black);
+  }
+
+  .btn-primary:hover { background: #00cfeb; }
+
+  .btn-outline {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+
+  .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+
+  .btn-danger {
+    background: var(--red);
+    color: white;
+  }
+
+  .btn-success {
+    background: var(--green);
+    color: var(--black);
+  }
+
+  .btn-sm {
+    padding: 5px 12px;
+    font-size: 12px;
+  }
+
+  /* CONTENT */
+  .content {
+    padding: 32px;
+  }
+
+  /* PAGES */
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* STATS ROW */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+
+  .stat-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+  }
+
+  .stat-card.cyan::before { background: var(--accent); }
+  .stat-card.orange::before { background: var(--accent2); }
+  .stat-card.gold::before { background: var(--gold); }
+  .stat-card.green::before { background: var(--green); }
+
+  .stat-label {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .stat-value {
+    font-family: var(--font-display);
+    font-size: 36px;
+    letter-spacing: 1px;
+    line-height: 1;
+  }
+
+  .stat-card.cyan .stat-value { color: var(--accent); }
+  .stat-card.orange .stat-value { color: var(--accent2); }
+  .stat-card.gold .stat-value { color: var(--gold); }
+  .stat-card.green .stat-value { color: var(--green); }
+
+  .stat-change {
+    font-size: 12px;
+    margin-top: 6px;
+    color: var(--muted);
+  }
+
+  .stat-change.up { color: var(--green); }
+  .stat-change.down { color: var(--red); }
+
+  /* GRID LAYOUTS */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+
+  /* CARDS */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+  }
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+
+  .card-title {
+    font-family: var(--font-display);
+    font-size: 18px;
+    letter-spacing: 0.5px;
+  }
+
+  .card-badge {
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-weight: 600;
+  }
+
+  .badge-cyan { background: rgba(0,229,255,0.15); color: var(--accent); }
+  .badge-green { background: rgba(0,230,118,0.15); color: var(--green); }
+  .badge-orange { background: rgba(255,87,34,0.15); color: var(--accent2); }
+  .badge-gold { background: rgba(255,193,7,0.15); color: var(--gold); }
+  .badge-red { background: rgba(255,23,68,0.15); color: var(--red); }
+
+  /* TABLE */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  th {
+    text-align: left;
+    padding: 10px 14px;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+    font-weight: 500;
+  }
+
+  td {
+    padding: 12px 14px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    vertical-align: middle;
+  }
+
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+
+  /* STATUS PILLS */
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .pill-green { background: rgba(0,230,118,0.12); color: var(--green); }
+  .pill-yellow { background: rgba(255,193,7,0.12); color: var(--gold); }
+  .pill-red { background: rgba(255,23,68,0.12); color: var(--red); }
+  .pill-blue { background: rgba(0,229,255,0.12); color: var(--accent); }
+  .pill-orange { background: rgba(255,87,34,0.12); color: var(--accent2); }
+
+  /* FORM ELEMENTS */
+  .form-group { margin-bottom: 16px; }
+  .form-label { font-size: 12px; color: var(--muted); margin-bottom: 6px; display: block; letter-spacing: 0.5px; }
+
+  .form-input, .form-select, .form-textarea {
+    width: 100%;
+    background: #1a1c20;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    color: var(--text);
+    font-size: 14px;
+    font-family: var(--font-body);
+    transition: border-color 0.15s;
+    outline: none;
+  }
+
+  .form-input:focus, .form-select:focus, .form-textarea:focus {
+    border-color: var(--accent);
+  }
+
+  .form-textarea { resize: vertical; min-height: 80px; }
+  .form-select option { background: var(--dark); }
+
+  /* CLOCK IN MODULE */
+  .clock-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+
+  .employee-clock-card {
+    background: #1a1c20;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px;
+    text-align: center;
+    transition: all 0.2s;
+  }
+
+  .employee-clock-card.clocked-in {
+    border-color: rgba(0,230,118,0.4);
+    background: rgba(0,230,118,0.04);
+  }
+
+  .emp-avatar {
+    width: 48px; height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    margin: 0 auto 10px;
+    font-weight: 700;
+    font-family: var(--font-display);
+  }
+
+  .emp-name { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+  .emp-role { font-size: 11px; color: var(--muted); margin-bottom: 12px; }
+  .emp-time { font-family: var(--font-mono); font-size: 13px; color: var(--accent); margin-bottom: 12px; }
+
+  /* INVENTORY */
+  .inv-bar {
+    height: 6px;
+    border-radius: 3px;
+    background: var(--border);
+    margin-top: 6px;
+    overflow: hidden;
+  }
+
+  .inv-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.5s;
+  }
+
+  /* QUOTE BUILDER */
+  .quote-service-btn {
+    background: #1a1c20;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 16px;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.15s;
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 13px;
+  }
+
+  .quote-service-btn:hover, .quote-service-btn.selected {
+    border-color: var(--accent);
+    background: rgba(0,229,255,0.06);
+    color: var(--accent);
+  }
+
+  .quote-total {
+    font-family: var(--font-display);
+    font-size: 48px;
+    color: var(--accent);
+    letter-spacing: 1px;
+  }
+
+  /* NOTIFICATIONS */
+  .notif {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px;
+    background: #1a1c20;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 8px;
+  }
+
+  .notif-icon {
+    font-size: 20px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .notif-text { font-size: 13px; line-height: 1.5; }
+  .notif-time { font-size: 11px; color: var(--muted); margin-top: 3px; }
+
+  /* INTEGRATION STATUS */
+  .integration-card {
+    background: #1a1c20;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .int-logo {
+    width: 44px; height: 44px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+  }
+
+  .int-info { flex: 1; }
+  .int-name { font-size: 14px; font-weight: 600; }
+  .int-desc { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  /* MODAL */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    display: none;
+  }
+
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px;
+    width: 520px;
+    max-width: 95vw;
+    max-height: 85vh;
+    overflow-y: auto;
+  }
+
+  .modal-title {
+    font-family: var(--font-display);
+    font-size: 22px;
+    letter-spacing: 0.5px;
+    margin-bottom: 20px;
+  }
+
+  /* LIVE CLOCK */
+  #live-clock {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--muted);
+    background: #1a1c20;
+    padding: 6px 14px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+  }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* DIVIDER */
+  .divider { height: 1px; background: var(--border); margin: 20px 0; }
+
+  .mt-16 { margin-top: 16px; }
+  .mt-20 { margin-top: 20px; }
+  .flex { display: flex; }
+  .items-center { align-items: center; }
+  .justify-between { justify-content: space-between; }
+  .gap-8 { gap: 8px; }
+  .gap-12 { gap: 12px; }
+  .w-full { width: 100%; }
+  .text-muted { color: var(--muted); font-size: 13px; }
+  .text-sm { font-size: 12px; }
+  .font-mono { font-family: var(--font-mono); }
+
+  /* CARFAX SUBMIT */
+  .carfax-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 16px;
+    border-radius: 10px;
+    background: #1a1c20;
+    border: 1px solid var(--border);
+    margin-bottom: 10px;
+  }
+
+  .carfax-step-num {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: rgba(0,229,255,0.15);
+    color: var(--accent);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .reminder-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: #1a1c20;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 8px;
+  }
+
+  .reminder-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="logo-area">
+    <div class="logo-name">DYNAMIC</div>
+    <div class="logo-name" style="color:var(--text);font-size:16px">DETAILING & TINT</div>
+    <div class="logo-sub">Business Hub</div>
+  </div>
+  <nav class="nav">
+    <div class="nav-section">Overview</div>
+    <div class="nav-item active" onclick="showPage('dashboard', this)">
+      <span class="nav-icon">⚡</span> Dashboard
+    </div>
+    <div class="nav-item" onclick="showPage('jobs', this)">
+      <span class="nav-icon">🚗</span> Jobs & Orders
+    </div>
+
+    <div class="nav-section">Operations</div>
+    <div class="nav-item" onclick="showPage('quotes', this)">
+      <span class="nav-icon">💬</span> Quotes
+    </div>
+    <div class="nav-item" onclick="showPage('clockin', this)">
+      <span class="nav-icon">⏱️</span> Clock In / Out
+    </div>
+    <div class="nav-item" onclick="showPage('inventory', this)">
+      <span class="nav-icon">📦</span> Inventory
+    </div>
+    <div class="nav-item" onclick="showPage('reminders', this)">
+      <span class="nav-icon">🔔</span> Reminders
+    </div>
+
+    <div class="nav-section">Integrations</div>
+    <div class="nav-item" onclick="showPage('carfax', this)">
+      <span class="nav-icon">🔍</span> Carfax
+    </div>
+    <div class="nav-item" onclick="showPage('quickbooks', this)">
+      <span class="nav-icon">📒</span> QuickBooks
+    </div>
+    <div class="nav-item" onclick="showPage('stripe', this)">
+      <span class="nav-icon">💳</span> Stripe
+    </div>
+    <div class="nav-item" onclick="showPage('sms', this)">
+      <span class="nav-icon">📲</span> Auto Messaging
+    </div>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="business-info">
+      <div style="margin-bottom:4px"><span class="status-dot"></span><strong style="color:var(--green)">Open</strong></div>
+      <div>395 Mt Vernon Ave</div>
+      <div>Odenton, MD 21113</div>
+      <div style="margin-top:4px">(410) 674-2430</div>
+    </div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+  <div class="topbar">
+    <div class="page-title" id="topbar-title">DASHBOARD</div>
+    <div class="topbar-actions">
+      <div id="live-clock">--:--:--</div>
+      <button class="btn btn-outline btn-sm" onclick="showPage('quotes', document.querySelector('[onclick*=quotes]'))">+ New Quote</button>
+      <button class="btn btn-primary btn-sm" onclick="openModal('newJobModal')">+ New Job</button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- ═══ DASHBOARD ═══ -->
+    <div id="page-dashboard" class="page active">
+      <div class="stats-grid">
+        <div class="stat-card cyan">
+          <div class="stat-label">Today's Revenue</div>
+          <div class="stat-value">$2,840</div>
+          <div class="stat-change up">↑ +12% vs yesterday</div>
+        </div>
+        <div class="stat-card orange">
+          <div class="stat-label">Active Jobs</div>
+          <div class="stat-value">7</div>
+          <div class="stat-change">3 in progress</div>
+        </div>
+        <div class="stat-card gold">
+          <div class="stat-label">Pending Quotes</div>
+          <div class="stat-value">12</div>
+          <div class="stat-change up">↑ 4 new today</div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-label">Clocked In</div>
+          <div class="stat-value">4</div>
+          <div class="stat-change">of 6 employees</div>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Today's Schedule</div>
+            <span class="card-badge badge-cyan">May 9</span>
+          </div>
+          <table>
+            <thead><tr>
+              <th>Time</th><th>Customer</th><th>Service</th><th>Status</th>
+            </tr></thead>
+            <tbody>
+              <tr><td class="font-mono" style="font-size:12px">9:00 AM</td><td>Marcus T.</td><td>Window Tint — Tesla M3</td><td><span class="pill pill-green">Done</span></td></tr>
+              <tr><td class="font-mono" style="font-size:12px">10:30 AM</td><td>Lisa R.</td><td>Ceramic Coat — BMW X5</td><td><span class="pill pill-blue">In Progress</span></td></tr>
+              <tr><td class="font-mono" style="font-size:12px">12:00 PM</td><td>James K.</td><td>Full Detail — Tahoe</td><td><span class="pill pill-blue">In Progress</span></td></tr>
+              <tr><td class="font-mono" style="font-size:12px">2:00 PM</td><td>Angela M.</td><td>PPF — Mustang GT</td><td><span class="pill pill-yellow">Upcoming</span></td></tr>
+              <tr><td class="font-mono" style="font-size:12px">3:30 PM</td><td>Devon S.</td><td>Tint + Detail — Camry</td><td><span class="pill pill-yellow">Upcoming</span></td></tr>
+              <tr><td class="font-mono" style="font-size:12px">5:00 PM</td><td>Patricia W.</td><td>Vinyl Wrap Consult</td><td><span class="pill pill-yellow">Upcoming</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Alerts</div>
+              <span class="card-badge badge-red">3 Issues</span>
+            </div>
+            <div class="notif">
+              <div class="notif-icon">📦</div>
+              <div>
+                <div class="notif-text"><strong>Low Stock:</strong> Ceramic Pro 9H coating — 2 units left</div>
+                <div class="notif-time">Inventory Alert</div>
+              </div>
+            </div>
+            <div class="notif">
+              <div class="notif-icon">💳</div>
+              <div>
+                <div class="notif-text"><strong>Payment Pending:</strong> Invoice #1047 — James K. ($380)</div>
+                <div class="notif-time">Stripe • 2 hours ago</div>
+              </div>
+            </div>
+            <div class="notif">
+              <div class="notif-icon">🔍</div>
+              <div>
+                <div class="notif-text"><strong>Carfax:</strong> 2 jobs completed — service history pending submission</div>
+                <div class="notif-time">Carfax Network</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Revenue This Week</div>
+            </div>
+            <div style="display:flex;gap:6px;align-items:flex-end;height:80px">
+              <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">
+                <div style="flex:1;width:100%;background:rgba(0,229,255,0.3);border-radius:3px 3px 0 0;min-height:30%;height:55%"></div>
+                <div style="font-size:10px;color:var(--muted)">Mon</div>
+              </div>
+              <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">
+                <div style="flex:1;width:100%;background:rgba(0,229,255,0.3);border-radius:3px 3px 0 0;height:72%"></div>
+                <div style="font-size:10px;color:var(--muted)">Tue</div>
+              </div>
+              <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">
+                <div style="flex:1;width:100%;background:rgba(0,229,255,0.3);border-radius:3px 3px 0 0;height:45%"></div>
+                <div style="font-size:10px;color:var(--muted)">Wed</div>
+              </div>
+              <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">
+                <div style="flex:1;width:100%;background:rgba(0,229,255,0.3);border-radius:3px 3px 0 0;height:88%"></div>
+                <div style="font-size:10px;color:var(--muted)">Thu</div>
+              </div>
+              <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">
+                <div style="flex:1;width:100%;background:var(--accent);border-radius:3px 3px 0 0;height:100%"></div>
+                <div style="font-size:10px;color:var(--accent)">Fri</div>
+              </div>
+              <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">
+                <div style="flex:1;width:100%;background:rgba(0,229,255,0.15);border-radius:3px 3px 0 0;height:30%"></div>
+                <div style="font-size:10px;color:var(--muted)">Sat</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ JOBS ═══ -->
+    <div id="page-jobs" class="page">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">All Jobs</div>
+          <button class="btn btn-primary btn-sm" onclick="openModal('newJobModal')">+ New Job</button>
+        </div>
+        <table>
+          <thead><tr>
+            <th>Job #</th><th>Customer</th><th>Vehicle</th><th>Service</th><th>Amount</th><th>Carfax</th><th>Payment</th><th>Status</th><th></th>
+          </tr></thead>
+          <tbody>
+            <tr>
+              <td class="font-mono" style="color:var(--muted);font-size:12px">#1049</td>
+              <td><strong>Marcus Thompson</strong></td>
+              <td>2022 Tesla Model 3</td>
+              <td>Window Tint (35%)</td>
+              <td style="color:var(--green)">$280</td>
+              <td><span class="pill pill-green">✓ Submitted</span></td>
+              <td><span class="pill pill-green">Paid</span></td>
+              <td><span class="pill pill-green">Complete</span></td>
+              <td><button class="btn btn-outline btn-sm">View</button></td>
+            </tr>
+            <tr>
+              <td class="font-mono" style="color:var(--muted);font-size:12px">#1048</td>
+              <td><strong>Lisa Rodriguez</strong></td>
+              <td>2021 BMW X5</td>
+              <td>Ceramic Coat — System X</td>
+              <td style="color:var(--green)">$1,200</td>
+              <td><span class="pill pill-yellow">Pending</span></td>
+              <td><span class="pill pill-yellow">Deposit</span></td>
+              <td><span class="pill pill-blue">In Progress</span></td>
+              <td><button class="btn btn-outline btn-sm">View</button></td>
+            </tr>
+            <tr>
+              <td class="font-mono" style="color:var(--muted);font-size:12px">#1047</td>
+              <td><strong>James Kim</strong></td>
+              <td>2020 Chevy Tahoe</td>
+              <td>Full Interior Detail</td>
+              <td style="color:var(--green)">$380</td>
+              <td><span class="pill pill-green">✓ Submitted</span></td>
+              <td><span class="pill pill-red">Unpaid</span></td>
+              <td><span class="pill pill-blue">In Progress</span></td>
+              <td><button class="btn btn-outline btn-sm">View</button></td>
+            </tr>
+            <tr>
+              <td class="font-mono" style="color:var(--muted);font-size:12px">#1046</td>
+              <td><strong>Angela Morris</strong></td>
+              <td>2023 Ford Mustang GT</td>
+              <td>PPF Full Front</td>
+              <td style="color:var(--green)">$950</td>
+              <td><span class="pill pill-yellow">Not Yet</span></td>
+              <td><span class="pill pill-blue">Invoice Sent</span></td>
+              <td><span class="pill pill-yellow">Scheduled</span></td>
+              <td><button class="btn btn-outline btn-sm">View</button></td>
+            </tr>
+            <tr>
+              <td class="font-mono" style="color:var(--muted);font-size:12px">#1045</td>
+              <td><strong>Devon Styles</strong></td>
+              <td>2019 Toyota Camry</td>
+              <td>Tint + Full Detail</td>
+              <td style="color:var(--green)">$520</td>
+              <td><span class="pill pill-yellow">Pending</span></td>
+              <td><span class="pill pill-green">Paid</span></td>
+              <td><span class="pill pill-yellow">Scheduled</span></td>
+              <td><button class="btn btn-outline btn-sm">View</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ═══ QUOTES ═══ -->
+    <div id="page-quotes" class="page">
+      <div class="two-col">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Build a Quote</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Customer Name</label>
+            <input class="form-input" type="text" placeholder="Full name" id="q-name"/>
+          </div>
+          <div class="two-col" style="gap:12px">
+            <div class="form-group">
+              <label class="form-label">Vehicle Year</label>
+              <input class="form-input" type="text" placeholder="2022" id="q-year"/>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Make & Model</label>
+              <input class="form-input" type="text" placeholder="BMW X5" id="q-vehicle"/>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Vehicle Size</label>
+            <select class="form-select" id="q-size" onchange="calcQuote()">
+              <option value="1">Sedan / Coupe</option>
+              <option value="1.2">SUV / Crossover</option>
+              <option value="1.4">Truck / Full-size SUV</option>
+              <option value="1.6">Van / Large Truck</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Services</label>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px">
+              <button class="quote-service-btn" onclick="toggleService(this,'Window Tint',200)" data-price="200">🪟 Window Tint — $200+</button>
+              <button class="quote-service-btn" onclick="toggleService(this,'Ceramic Coating',800)" data-price="800">✨ Ceramic Coat — $800+</button>
+              <button class="quote-service-btn" onclick="toggleService(this,'Auto Detail',250)" data-price="250">🧽 Auto Detail — $250+</button>
+              <button class="quote-service-btn" onclick="toggleService(this,'PPF Full Front',750)" data-price="750">🛡️ PPF Front — $750+</button>
+              <button class="quote-service-btn" onclick="toggleService(this,'Vinyl Wrap',1200)" data-price="1200">🎨 Vinyl Wrap — $1,200+</button>
+              <button class="quote-service-btn" onclick="toggleService(this,'Interior Detail',180)" data-price="180">🪑 Interior Detail — $180+</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Notes</label>
+            <textarea class="form-textarea" placeholder="Special requests, tint %, etc."></textarea>
+          </div>
+          <button class="btn btn-primary w-full" onclick="sendQuote()">📲 Send Quote via SMS</button>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Quote Preview</div>
+            </div>
+            <div style="text-align:center;padding:20px 0">
+              <div style="font-size:12px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px">Estimated Total</div>
+              <div class="quote-total" id="quote-total">$0</div>
+              <div style="font-size:12px;color:var(--muted);margin-top:8px">Based on vehicle size & selected services</div>
+            </div>
+            <div id="quote-services-list" style="margin-top:10px"></div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Recent Quotes</div>
+            </div>
+            <table>
+              <thead><tr><th>Customer</th><th>Services</th><th>Total</th><th>Status</th></tr></thead>
+              <tbody>
+                <tr><td>Mike J.</td><td>Tint + Detail</td><td>$480</td><td><span class="pill pill-green">Accepted</span></td></tr>
+                <tr><td>Sarah P.</td><td>Ceramic Coat</td><td>$960</td><td><span class="pill pill-yellow">Pending</span></td></tr>
+                <tr><td>Robert F.</td><td>PPF + Tint</td><td>$1,100</td><td><span class="pill pill-blue">Sent</span></td></tr>
+                <tr><td>Nina T.</td><td>Full Detail</td><td>$350</td><td><span class="pill pill-red">Declined</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ CLOCK IN ═══ -->
+    <div id="page-clockin" class="page">
+      <div class="card" style="margin-bottom:20px">
+        <div class="card-header">
+          <div class="card-title">Employee Time Clock</div>
+          <div id="clock-display" style="font-family:var(--font-mono);font-size:20px;color:var(--accent)">--:--:--</div>
+        </div>
+        <div class="clock-grid" id="clock-grid">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Today's Timesheet</div>
+          <span class="card-badge badge-cyan">May 9, 2026</span>
+        </div>
+        <table>
+          <thead><tr>
+            <th>Employee</th><th>Clock In</th><th>Clock Out</th><th>Hours</th><th>Status</th>
+          </tr></thead>
+          <tbody id="timesheet-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ═══ INVENTORY ═══ -->
+    <div id="page-inventory" class="page">
+      <div class="card-header" style="margin-bottom:20px">
+        <div></div>
+        <button class="btn btn-primary btn-sm" onclick="openModal('addInventoryModal')">+ Add Item</button>
+      </div>
+      <div class="two-col">
+        <div class="card">
+          <div class="card-title" style="margin-bottom:16px">Tint Films</div>
+          <div id="inv-tint"></div>
+        </div>
+        <div class="card">
+          <div class="card-title" style="margin-bottom:16px">Ceramic & PPF</div>
+          <div id="inv-ceramic"></div>
+        </div>
+        <div class="card">
+          <div class="card-title" style="margin-bottom:16px">Detailing Supplies</div>
+          <div id="inv-detail"></div>
+        </div>
+        <div class="card">
+          <div class="card-title" style="margin-bottom:16px">Tools & Equipment</div>
+          <div id="inv-tools"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ REMINDERS ═══ -->
+    <div id="page-reminders" class="page">
+      <div class="two-col">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Active Reminders</div>
+            <button class="btn btn-primary btn-sm" onclick="openModal('addReminderModal')">+ Add</button>
+          </div>
+          <div id="reminders-list"></div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Customer Follow-Ups</div>
+          </div>
+          <table>
+            <thead><tr><th>Customer</th><th>Service</th><th>Follow-Up</th><th>Action</th></tr></thead>
+            <tbody>
+              <tr><td>Marcus T.</td><td>Tint</td><td>May 23 — 2 week check</td><td><button class="btn btn-outline btn-sm">📲 SMS</button></td></tr>
+              <tr><td>Lisa R.</td><td>Ceramic</td><td>Jun 9 — 30 day follow</td><td><button class="btn btn-outline btn-sm">📲 SMS</button></td></tr>
+              <tr><td>Devon S.</td><td>Detail</td><td>Jun 9 — Service reminder</td><td><button class="btn btn-outline btn-sm">📲 SMS</button></td></tr>
+              <tr><td>Angela M.</td><td>PPF</td><td>Aug 9 — 90 day check</td><td><button class="btn btn-outline btn-sm">📲 SMS</button></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ CARFAX ═══ -->
+    <div id="page-carfax" class="page">
+      <div class="two-col">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Submit Service to Carfax</div>
+            <span class="card-badge badge-cyan">Service Network</span>
+          </div>
+
+          <div class="carfax-step">
+            <div class="carfax-step-num">1</div>
+            <div>
+              <div style="font-size:14px;font-weight:600;margin-bottom:4px">Select Completed Job</div>
+              <div class="text-muted">Choose a job to submit to Carfax vehicle history</div>
+            </div>
+          </div>
+          <div class="carfax-step">
+            <div class="carfax-step-num">2</div>
+            <div>
+              <div style="font-size:14px;font-weight:600;margin-bottom:4px">Verify VIN</div>
+              <div class="text-muted">VIN is pulled from the job — confirm it's correct</div>
+            </div>
+          </div>
+          <div class="carfax-step">
+            <div class="carfax-step-num">3</div>
+            <div>
+              <div style="font-size:14px;font-weight:600;margin-bottom:4px">Submit Service Record</div>
+              <div class="text-muted">Sent to Carfax via the Service Network API</div>
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="form-group">
+            <label class="form-label">Select Job</label>
+            <select class="form-select">
+              <option>Job #1047 — James Kim — 2020 Tahoe — Full Detail</option>
+              <option>Job #1048 — Lisa Rodriguez — 2021 BMW X5 — Ceramic Coat</option>
+              <option>Job #1046 — Angela Morris — 2023 Mustang — PPF</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">VIN Number</label>
+            <input class="form-input font-mono" type="text" value="1GNSCBKC2LR214792" placeholder="17-digit VIN"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Service Type</label>
+            <select class="form-select">
+              <option>Window Tinting</option>
+              <option>Ceramic Coating</option>
+              <option>Paint Protection Film</option>
+              <option>Auto Detailing</option>
+              <option>Vinyl Wrap</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Service Date</label>
+            <input class="form-input" type="date" value="2026-05-09"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Mileage at Service</label>
+            <input class="form-input" type="text" placeholder="42,500"/>
+          </div>
+          <button class="btn btn-primary w-full" onclick="submitCarfax()">🔍 Submit to Carfax History</button>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Submission History</div>
+            </div>
+            <table>
+              <thead><tr><th>Vehicle</th><th>VIN</th><th>Service</th><th>Date</th><th>Status</th></tr></thead>
+              <tbody>
+                <tr><td>Tesla M3</td><td class="font-mono" style="font-size:11px">5YJ3E1EA...</td><td>Tint</td><td>May 9</td><td><span class="pill pill-green">✓ Live</span></td></tr>
+                <tr><td>Honda Civic</td><td class="font-mono" style="font-size:11px">2HGFG3B5...</td><td>Detail</td><td>May 7</td><td><span class="pill pill-green">✓ Live</span></td></tr>
+                <tr><td>Dodge Charger</td><td class="font-mono" style="font-size:11px">2C3CDZBT...</td><td>Ceramic</td><td>May 5</td><td><span class="pill pill-green">✓ Live</span></td></tr>
+                <tr><td>Ford F-150</td><td class="font-mono" style="font-size:11px">1FTFW1E5...</td><td>PPF</td><td>May 2</td><td><span class="pill pill-green">✓ Live</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Carfax Enrollment</div>
+              <span class="card-badge badge-green">✓ Active</span>
+            </div>
+            <div style="font-size:13px;color:var(--muted);line-height:1.7">
+              <div>Shop: <strong style="color:var(--text)">Dynamic Detailing & Tint</strong></div>
+              <div>Network ID: <span class="font-mono" style="color:var(--accent)">DDT-4721-MD</span></div>
+              <div>Address: 395 Mt Vernon Ave, Odenton MD</div>
+              <div style="margin-top:10px">📋 <a href="https://www.carfax.com/service-network" target="_blank" style="color:var(--accent);text-decoration:none">Manage Carfax Service Network →</a></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ QUICKBOOKS ═══ -->
+    <div id="page-quickbooks" class="page">
+      <div class="two-col">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">QuickBooks</div>
+            <span class="card-badge badge-green">✓ Connected</span>
+          </div>
+
+          <div class="three-col" style="gap:12px;margin-bottom:20px">
+            <div style="background:#1a1c20;border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center">
+              <div style="font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase">This Month</div>
+              <div style="font-family:var(--font-display);font-size:24px;color:var(--green);margin-top:4px">$18,420</div>
+            </div>
+            <div style="background:#1a1c20;border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center">
+              <div style="font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase">Unpaid</div>
+              <div style="font-family:var(--font-display);font-size:24px;color:var(--red);margin-top:4px">$1,560</div>
+            </div>
+            <div style="background:#1a1c20;border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center">
+              <div style="font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase">Invoices</div>
+              <div style="font-family:var(--font-display);font-size:24px;color:var(--accent);margin-top:4px">47</div>
+            </div>
+          </div>
+
+          <div class="card-title" style="font-size:15px;margin-bottom:12px">Recent Invoices</div>
+          <table>
+            <thead><tr><th>Invoice</th><th>Customer</th><th>Amount</th><th>Due</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td class="font-mono" style="font-size:12px">#1049</td><td>Marcus T.</td><td>$280</td><td>Paid</td><td><span class="pill pill-green">Paid</span></td></tr>
+              <tr><td class="font-mono" style="font-size:12px">#1048</td><td>Lisa R.</td><td>$1,200</td><td>May 16</td><td><span class="pill pill-yellow">Partial</span></td></tr>
+              <tr><td class="font-mono" style="font-size:12px">#1047</td><td>James K.</td><td>$380</td><td>May 12</td><td><span class="pill pill-red">Overdue</span></td></tr>
+              <tr><td class="font-mono" style="font-size:12px">#1046</td><td>Angela M.</td><td>$950</td><td>May 14</td><td><span class="pill pill-blue">Sent</span></td></tr>
+            </tbody>
+          </table>
+
+          <div class="divider"></div>
+          <button class="btn btn-primary btn-sm">+ Create Invoice</button>
+          <button class="btn btn-outline btn-sm" style="margin-left:8px">View in QuickBooks →</button>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Expenses</div>
+          </div>
+          <table>
+            <thead><tr><th>Category</th><th>Amount</th><th>Date</th></tr></thead>
+            <tbody>
+              <tr><td>Ceramic Pro 9H (4 units)</td><td style="color:var(--red)">-$680</td><td>May 7</td></tr>
+              <tr><td>Tint Film Roll — 35%</td><td style="color:var(--red)">-$220</td><td>May 5</td></tr>
+              <tr><td>Detail Supplies — Meguiars</td><td style="color:var(--red)">-$145</td><td>May 3</td></tr>
+              <tr><td>Shop Supplies</td><td style="color:var(--red)">-$89</td><td>May 1</td></tr>
+            </tbody>
+          </table>
+          <div class="divider"></div>
+          <div style="font-size:13px;color:var(--muted)">
+            Auto-synced from inventory purchases. All expenses push to QuickBooks automatically when supplies are restocked.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ STRIPE ═══ -->
+    <div id="page-stripe" class="page">
+      <div class="two-col">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Stripe Payments</div>
+            <span class="card-badge badge-green">✓ Live Mode</span>
+          </div>
+          <div class="two-col" style="gap:12px;margin-bottom:20px">
+            <div style="background:#1a1c20;border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center">
+              <div style="font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase">Today</div>
+              <div style="font-family:var(--font-display);font-size:24px;color:var(--green);margin-top:4px">$2,840</div>
+            </div>
+            <div style="background:#1a1c20;border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center">
+              <div style="font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase">This Month</div>
+              <div style="font-family:var(--font-display);font-size:24px;color:var(--green);margin-top:4px">$18,420</div>
+            </div>
+          </div>
+
+          <div class="card-title" style="font-size:15px;margin-bottom:12px">Recent Transactions</div>
+          <table>
+            <thead><tr><th>Customer</th><th>Amount</th><th>Method</th><th>Time</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td>Marcus T.</td><td style="color:var(--green)">$280</td><td>💳 Visa</td><td>9:45 AM</td><td><span class="pill pill-green">Captured</span></td></tr>
+              <tr><td>Lisa R. (Deposit)</td><td style="color:var(--green)">$300</td><td>💳 Amex</td><td>8:12 AM</td><td><span class="pill pill-green">Captured</span></td></tr>
+              <tr><td>Marcus T. (Tip)</td><td style="color:var(--green)">$40</td><td>💳 Visa</td><td>9:50 AM</td><td><span class="pill pill-green">Captured</span></td></tr>
+              <tr><td>Devon S. (Deposit)</td><td style="color:var(--accent)">$100</td><td>💳 MC</td><td>Yesterday</td><td><span class="pill pill-blue">Auth Hold</span></td></tr>
+            </tbody>
+          </table>
+
+          <div class="divider"></div>
+          <button class="btn btn-primary btn-sm">+ Send Payment Link</button>
+          <button class="btn btn-outline btn-sm" style="margin-left:8px">Stripe Dashboard →</button>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Send Payment Link</div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Customer</label>
+              <select class="form-select">
+                <option>James Kim — Invoice #1047 — $380</option>
+                <option>Angela Morris — Invoice #1046 — $950</option>
+                <option>Lisa Rodriguez — Balance — $900</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Send via</label>
+              <select class="form-select">
+                <option>SMS (Twilio)</option>
+                <option>Email</option>
+                <option>Both</option>
+              </select>
+            </div>
+            <button class="btn btn-primary w-full" onclick="alert('✅ Payment link sent via SMS!')">💳 Send Stripe Payment Link</button>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">QuickBooks Sync</div>
+              <span class="card-badge badge-green">Auto Sync ON</span>
+            </div>
+            <div style="font-size:13px;color:var(--muted);line-height:1.8">
+              All Stripe payments automatically sync to QuickBooks as received payments and close outstanding invoices.
+              <div style="margin-top:10px;color:var(--green)">✓ Last synced: May 9, 2026 at 10:02 AM</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ AUTO MESSAGING ═══ -->
+    <div id="page-sms" class="page">
+      <div class="two-col">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Auto SMS — Twilio</div>
+            <span class="card-badge badge-green">✓ Active</span>
+          </div>
+
+          <div class="card-title" style="font-size:15px;margin-bottom:12px">Automated Triggers</div>
+          <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:#1a1c20;border:1px solid var(--border);border-radius:8px">
+              <div>
+                <div style="font-size:14px;font-weight:600">📅 Appointment Confirmation</div>
+                <div style="font-size:12px;color:var(--muted)">Sent immediately when job is booked</div>
+              </div>
+              <span class="pill pill-green">ON</span>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:#1a1c20;border:1px solid var(--border);border-radius:8px">
+              <div>
+                <div style="font-size:14px;font-weight:600">⏰ Day-Before Reminder</div>
+                <div style="font-size:12px;color:var(--muted)">Sent 24 hours before appointment</div>
+              </div>
+              <span class="pill pill-green">ON</span>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:#1a1c20;border:1px solid var(--border);border-radius:8px">
+              <div>
+                <div style="font-size:14px;font-weight:600">✅ Job Complete — Payment Link</div>
+                <div style="font-size:12px;color:var(--muted)">Sent when job status marked complete</div>
+              </div>
+              <span class="pill pill-green">ON</span>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:#1a1c20;border:1px solid var(--border);border-radius:8px">
+              <div>
+                <div style="font-size:14px;font-weight:600">⭐ Review Request</div>
+                <div style="font-size:12px;color:var(--muted)">Sent 2 hours after job complete</div>
+              </div>
+              <span class="pill pill-green">ON</span>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:#1a1c20;border:1px solid var(--border);border-radius:8px">
+              <div>
+                <div style="font-size:14px;font-weight:600">💰 Payment Overdue Alert</div>
+                <div style="font-size:12px;color:var(--muted)">Sent if invoice unpaid after 3 days</div>
+              </div>
+              <span class="pill pill-yellow">ON</span>
+            </div>
+          </div>
+
+          <div class="divider"></div>
+          <div class="card-title" style="font-size:15px;margin-bottom:12px">Send Manual SMS</div>
+          <div class="form-group">
+            <label class="form-label">To</label>
+            <select class="form-select">
+              <option>James Kim — (443) 555-0182</option>
+              <option>Angela Morris — (410) 555-0247</option>
+              <option>Devon Styles — (301) 555-0391</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Message</label>
+            <textarea class="form-textarea" placeholder="Hi [Name], your vehicle is ready at Dynamic Detailing & Tint! 🚗✨">Hi James, your vehicle is ready for pickup at Dynamic Detailing & Tint! Your invoice of $380 can be paid here: [stripe-link] — (410) 674-2430</textarea>
+          </div>
+          <button class="btn btn-primary w-full" onclick="alert('📲 SMS sent via Twilio!')">📲 Send SMS</button>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Message Log</div>
+          </div>
+          <table>
+            <thead><tr><th>To</th><th>Type</th><th>Time</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td>Marcus T.</td><td>Review Request</td><td>9:52 AM</td><td><span class="pill pill-green">Delivered</span></td></tr>
+              <tr><td>Marcus T.</td><td>Job Complete</td><td>9:47 AM</td><td><span class="pill pill-green">Delivered</span></td></tr>
+              <tr><td>James K.</td><td>Day Reminder</td><td>8:00 AM</td><td><span class="pill pill-green">Delivered</span></td></tr>
+              <tr><td>Lisa R.</td><td>Day Reminder</td><td>8:00 AM</td><td><span class="pill pill-green">Delivered</span></td></tr>
+              <tr><td>Devon S.</td><td>Confirmation</td><td>Yesterday</td><td><span class="pill pill-green">Delivered</span></td></tr>
+              <tr><td>Nina T.</td><td>Overdue Notice</td><td>May 6</td><td><span class="pill pill-orange">No Reply</span></td></tr>
+            </tbody>
+          </table>
+
+          <div class="divider"></div>
+          <div style="font-size:12px;color:var(--muted)">
+            <strong style="color:var(--text)">Powered by Twilio.</strong> Messages sent from your business number (410) 674-2430. Synced with Stripe for automatic payment links.
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</main>
+
+<!-- MODAL: New Job -->
+<div class="modal-overlay" id="newJobModal">
+  <div class="modal">
+    <div class="modal-title">New Job</div>
+    <div class="two-col" style="gap:12px">
+      <div class="form-group">
+        <label class="form-label">Customer Name</label>
+        <input class="form-input" type="text" placeholder="Full name"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Phone</label>
+        <input class="form-input" type="text" placeholder="(410) 555-0000"/>
+      </div>
+    </div>
+    <div class="three-col" style="gap:12px">
+      <div class="form-group">
+        <label class="form-label">Year</label>
+        <input class="form-input" type="text" placeholder="2022"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Make</label>
+        <input class="form-input" type="text" placeholder="BMW"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Model</label>
+        <input class="form-input" type="text" placeholder="X5"/>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">VIN (for Carfax)</label>
+      <input class="form-input font-mono" type="text" placeholder="17-digit VIN"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Service</label>
+      <select class="form-select">
+        <option>Window Tinting</option>
+        <option>Ceramic Coating</option>
+        <option>Auto Detailing</option>
+        <option>PPF</option>
+        <option>Vinyl Wrap</option>
+        <option>Interior Detail</option>
+        <option>Multiple Services</option>
+      </select>
+    </div>
+    <div class="two-col" style="gap:12px">
+      <div class="form-group">
+        <label class="form-label">Date</label>
+        <input class="form-input" type="date" value="2026-05-09"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Time</label>
+        <input class="form-input" type="time" value="09:00"/>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Price</label>
+      <input class="form-input" type="text" placeholder="$0.00"/>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:4px">
+      <button class="btn btn-primary" style="flex:1" onclick="closeModal('newJobModal');alert('✅ Job created! SMS confirmation sent to customer.')">Create Job + Send SMS</button>
+      <button class="btn btn-outline" onclick="closeModal('newJobModal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Add Inventory -->
+<div class="modal-overlay" id="addInventoryModal">
+  <div class="modal">
+    <div class="modal-title">Add Inventory Item</div>
+    <div class="form-group">
+      <label class="form-label">Item Name</label>
+      <input class="form-input" type="text" placeholder="e.g. Ceramic Pro 9H"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Category</label>
+      <select class="form-select">
+        <option>Tint Films</option>
+        <option>Ceramic & PPF</option>
+        <option>Detailing Supplies</option>
+        <option>Tools & Equipment</option>
+      </select>
+    </div>
+    <div class="two-col" style="gap:12px">
+      <div class="form-group">
+        <label class="form-label">Quantity</label>
+        <input class="form-input" type="number" placeholder="10"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Low Stock Alert</label>
+        <input class="form-input" type="number" placeholder="3"/>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Unit Cost</label>
+      <input class="form-input" type="text" placeholder="$0.00"/>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:4px">
+      <button class="btn btn-primary" style="flex:1" onclick="closeModal('addInventoryModal');alert('✅ Item added to inventory!')">Add Item</button>
+      <button class="btn btn-outline" onclick="closeModal('addInventoryModal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Add Reminder -->
+<div class="modal-overlay" id="addReminderModal">
+  <div class="modal">
+    <div class="modal-title">Add Reminder</div>
+    <div class="form-group">
+      <label class="form-label">Title</label>
+      <input class="form-input" type="text" placeholder="e.g. Order more tint film"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Type</label>
+      <select class="form-select">
+        <option>Inventory Restock</option>
+        <option>Customer Follow-Up</option>
+        <option>Team Reminder</option>
+        <option>Appointment</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Due Date</label>
+      <input class="form-input" type="date"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Notes</label>
+      <textarea class="form-textarea" placeholder="Details..."></textarea>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:4px">
+      <button class="btn btn-primary" style="flex:1" onclick="closeModal('addReminderModal');addReminder()">Add Reminder</button>
+      <button class="btn btn-outline" onclick="closeModal('addReminderModal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── NAVIGATION ──
+function showPage(id, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  if(el) el.classList.add('active');
+  document.getElementById('topbar-title').textContent = el ? el.textContent.trim().toUpperCase() : id.toUpperCase();
+}
+
+// ── LIVE CLOCK ──
+function updateClock() {
+  const now = new Date();
+  const t = now.toLocaleTimeString('en-US', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const el = document.getElementById('live-clock');
+  const cl = document.getElementById('clock-display');
+  if(el) el.textContent = t;
+  if(cl) cl.textContent = t;
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ── MODAL ──
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(o => {
+  o.addEventListener('click', e => { if(e.target === o) o.classList.remove('open'); });
+});
+
+// ── EMPLOYEES ──
+const employees = [
+  { name: 'Marcus D.', role: 'Lead Tinter', init: 'MD', color: '#00e5ff', bg: 'rgba(0,229,255,0.15)', clockedIn: true, time: '8:02 AM' },
+  { name: 'Carlos R.', role: 'Ceramic Tech', init: 'CR', color: '#00e676', bg: 'rgba(0,230,118,0.15)', clockedIn: true, time: '8:15 AM' },
+  { name: 'Tyrese B.', role: 'Detailer', init: 'TB', color: '#ffc107', bg: 'rgba(255,193,7,0.15)', clockedIn: true, time: '8:30 AM' },
+  { name: 'Kevin W.', role: 'Detailer', init: 'KW', color: '#ff5722', bg: 'rgba(255,87,34,0.15)', clockedIn: true, time: '9:00 AM' },
+  { name: 'Jayla S.', role: 'Front Desk', init: 'JS', color: '#ab47bc', bg: 'rgba(171,71,188,0.15)', clockedIn: false, time: null },
+  { name: 'Deon P.', role: 'PPF Tech', init: 'DP', color: '#42a5f5', bg: 'rgba(66,165,245,0.15)', clockedIn: false, time: null },
+];
+
+function renderClockGrid() {
+  const grid = document.getElementById('clock-grid');
+  if(!grid) return;
+  grid.innerHTML = employees.map((e,i) => `
+    <div class="employee-clock-card ${e.clockedIn ? 'clocked-in' : ''}" id="emp-${i}">
+      <div class="emp-avatar" style="background:${e.bg};color:${e.color}">${e.init}</div>
+      <div class="emp-name">${e.name}</div>
+      <div class="emp-role">${e.role}</div>
+      ${e.clockedIn ? `<div class="emp-time">IN since ${e.time}</div>` : `<div class="emp-time" style="color:var(--muted)">Not clocked in</div>`}
+      <button class="btn btn-sm ${e.clockedIn ? 'btn-danger' : 'btn-success'}" onclick="toggleClock(${i})">
+        ${e.clockedIn ? 'Clock Out' : 'Clock In'}
+      </button>
+    </div>
+  `).join('');
+  renderTimesheet();
+}
+
+function toggleClock(i) {
+  const now = new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+  employees[i].clockedIn = !employees[i].clockedIn;
+  if(employees[i].clockedIn) employees[i].time = now;
+  renderClockGrid();
+}
+
+function renderTimesheet() {
+  const tb = document.getElementById('timesheet-body');
+  if(!tb) return;
+  tb.innerHTML = employees.map(e => `
+    <tr>
+      <td>${e.name}</td>
+      <td class="font-mono" style="font-size:12px">${e.time || '—'}</td>
+      <td class="font-mono" style="font-size:12px">${e.clockedIn ? '—' : '5:00 PM'}</td>
+      <td>${e.clockedIn ? 'Active' : e.time ? '8.0 hrs' : '0 hrs'}</td>
+      <td>${e.clockedIn ? '<span class="pill pill-green">Clocked In</span>' : e.time ? '<span class="pill pill-blue">Complete</span>' : '<span class="pill pill-red">Out</span>'}</td>
+    </tr>
+  `).join('');
+}
+
+// ── INVENTORY ──
+const inventory = {
+  tint: [
+    { name: 'Carbon 35% Roll (60")', qty: 8, max: 15, unit: 'rolls' },
+    { name: 'Carbon 20% Roll (60")', qty: 3, max: 15, unit: 'rolls' },
+    { name: 'Ceramic 50% Roll', qty: 11, max: 15, unit: 'rolls' },
+    { name: 'Limo Black 5%', qty: 2, max: 10, unit: 'rolls' },
+  ],
+  ceramic: [
+    { name: 'Ceramic Pro 9H', qty: 2, max: 12, unit: 'units' },
+    { name: 'Ceramic Pro Sport', qty: 6, max: 12, unit: 'units' },
+    { name: 'PPF Clear Film (60")', qty: 4, max: 10, unit: 'rolls' },
+    { name: 'System X Diamond', qty: 3, max: 8, unit: 'units' },
+  ],
+  detail: [
+    { name: 'Meguiars Car Wash', qty: 7, max: 20, unit: 'gal' },
+    { name: 'Iron Decontamination', qty: 4, max: 10, unit: 'btl' },
+    { name: 'Interior Cleaner', qty: 9, max: 20, unit: 'btl' },
+    { name: 'Microfiber Towels', qty: 45, max: 100, unit: 'pcs' },
+  ],
+  tools: [
+    { name: 'Heat Gun', qty: 3, max: 4, unit: 'units' },
+    { name: 'Squeegees (Pro)', qty: 12, max: 20, unit: 'pcs' },
+    { name: 'Buffer Machine', qty: 2, max: 3, unit: 'units' },
+    { name: 'Tint Cutter Blades', qty: 40, max: 100, unit: 'pcs' },
+  ]
+};
+
+function renderInventory() {
+  const keys = {tint:'inv-tint', ceramic:'inv-ceramic', detail:'inv-detail', tools:'inv-tools'};
+  Object.keys(keys).forEach(cat => {
+    const el = document.getElementById(keys[cat]);
+    if(!el) return;
+    el.innerHTML = inventory[cat].map(item => {
+      const pct = Math.round((item.qty / item.max) * 100);
+      const low = pct < 30;
+      const color = low ? 'var(--red)' : pct < 60 ? 'var(--gold)' : 'var(--green)';
+      return `
+        <div style="margin-bottom:14px">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div style="font-size:13px">${item.name}</div>
+            <div style="font-size:12px;color:${color};font-weight:600">${item.qty} ${item.unit}${low?' ⚠️':''}</div>
+          </div>
+          <div class="inv-bar"><div class="inv-fill" style="width:${pct}%;background:${color}"></div></div>
+        </div>
+      `;
+    }).join('');
+  });
+}
+
+// ── REMINDERS ──
+const reminders = [
+  { text: 'Reorder Ceramic Pro 9H — running low', color: 'var(--red)', time: 'Today' },
+  { text: 'Submit 2 pending Carfax records', color: 'var(--gold)', time: 'Today' },
+  { text: 'Follow up with Nina T. — overdue invoice', color: 'var(--accent2)', time: 'Today' },
+  { text: 'Staff meeting — weekly check-in', color: 'var(--accent)', time: 'Mon May 11' },
+  { text: 'Order summer tint film supply', color: 'var(--green)', time: 'May 15' },
+];
+
+function renderReminders() {
+  const el = document.getElementById('reminders-list');
+  if(!el) return;
+  el.innerHTML = reminders.map(r => `
+    <div class="reminder-item">
+      <div class="reminder-dot" style="background:${r.color}"></div>
+      <div style="flex:1">
+        <div style="font-size:13px">${r.text}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">${r.time}</div>
+      </div>
+      <button class="btn btn-outline btn-sm" onclick="this.closest('.reminder-item').remove()">✓</button>
+    </div>
+  `).join('');
+}
+
+function addReminder() { renderReminders(); }
+
+// ── QUOTE BUILDER ──
+let selectedServices = {};
+
+function toggleService(btn, name, price) {
+  btn.classList.toggle('selected');
+  if(selectedServices[name]) {
+    delete selectedServices[name];
+  } else {
+    selectedServices[name] = price;
+  }
+  calcQuote();
+}
+
+function calcQuote() {
+  const size = parseFloat(document.getElementById('q-size')?.value || 1);
+  const total = Object.values(selectedServices).reduce((a, b) => a + b, 0) * size;
+  const el = document.getElementById('quote-total');
+  if(el) el.textContent = '$' + Math.round(total).toLocaleString();
+  const list = document.getElementById('quote-services-list');
+  if(list) {
+    list.innerHTML = Object.entries(selectedServices).map(([k,v]) => `
+      <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px">
+        <span>${k}</span><span style="color:var(--green)">$${Math.round(v*size).toLocaleString()}</span>
+      </div>
+    `).join('');
+  }
+}
+
+function sendQuote() {
+  const name = document.getElementById('q-name')?.value || 'Customer';
+  if(Object.keys(selectedServices).length === 0) { alert('Please select at least one service.'); return; }
+  alert(`📲 Quote sent to ${name} via SMS!\n\nServices: ${Object.keys(selectedServices).join(', ')}\nTotal: ${document.getElementById('quote-total').textContent}`);
+}
+
+// ── CARFAX ──
+function submitCarfax() {
+  alert('✅ Service record submitted to Carfax!\n\nVehicle history will be updated within 24 hours on the Carfax report.');
+}
+
+// ── INIT ──
+renderClockGrid();
+renderInventory();
+renderReminders();
+</script>
+</body>
+</html>
