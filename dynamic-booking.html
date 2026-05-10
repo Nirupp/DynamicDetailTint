@@ -298,7 +298,7 @@ body{background:var(--off);color:var(--text);font-family:var(--font-b);min-heigh
 
         <!-- Category tabs -->
         <div class="service-tabs">
-          <button class="svc-tab active" onclick="showSvcCat('tinting',this)">🪟 Window Tinting</button>
+          <button class="svc-tab active" onclick="showSvcCat('tinting',this)">🚗 Window Tinting</button>
           <button class="svc-tab" onclick="showSvcCat('ceramic',this)">✨ Ceramic Coatings</button>
           <button class="svc-tab" onclick="showSvcCat('commercial',this)">🏢 Commercial/Residential</button>
           <button class="svc-tab" onclick="showSvcCat('detailing',this)">🧽 Detailing Packages</button>
@@ -320,6 +320,10 @@ body{background:var(--off);color:var(--text);font-family:var(--font-b);min-heigh
             <div class="svc-option" onclick="selectService(this,'3M Color Stable Tint','Pricing varies by vehicle')">
               <div><div class="svc-option-name">3M Color Stable Tint</div><div style="font-size:12px;color:var(--gray);margin-top:3px;">Non-reflective carbon · No color shift</div></div>
               <div class="svc-option-price">$150+</div>
+            </div>
+            <div class="svc-option" onclick="selectService(this,'Carbon Tint','Pricing varies by vehicle')">
+              <div><div class="svc-option-name">Carbon Tint</div><div style="font-size:12px;color:var(--gray);margin-top:3px;">Non-metallic · Matte finish · No fade</div></div>
+              <div class="svc-option-price">Quote</div>
             </div>
             <div class="svc-option" onclick="selectService(this,'Windshield Tint','Pricing varies by type')">
               <div><div class="svc-option-name">Windshield Tint</div><div style="font-size:12px;color:var(--gray);margin-top:3px;">Visor strip or full clear film</div></div>
@@ -361,6 +365,18 @@ body{background:var(--off);color:var(--text);font-family:var(--font-b);min-heigh
               <div class="variant-pill" onclick="selectVariant(this,'$300')"><span>Large SUV</span><span class="vp-price">$300</span></div>
               <div class="variant-pill" onclick="selectVariant(this,'$150')"><span>Front Doors Only</span><span class="vp-price">$150</span></div>
               <div class="variant-pill" onclick="selectVariant(this,'$325')"><span>Minivan</span><span class="vp-price">$325</span></div>
+            </div>
+          </div>
+          <!-- Carbon Tint variants -->
+          <div class="variant-section" id="vs-Carbon Tint">
+            <div class="variant-label">Select Vehicle Type</div>
+            <div class="variants">
+              <div class="variant-pill" onclick="selectVariant(this,'Call')"><span>2 Door Truck/Coupe</span><span class="vp-price">Call</span></div>
+              <div class="variant-pill" onclick="selectVariant(this,'Call')"><span>2.5 Door Truck/Sedan</span><span class="vp-price">Call</span></div>
+              <div class="variant-pill" onclick="selectVariant(this,'Call')"><span>Small SUV / 4 Door</span><span class="vp-price">Call</span></div>
+              <div class="variant-pill" onclick="selectVariant(this,'Call')"><span>Large SUV</span><span class="vp-price">Call</span></div>
+              <div class="variant-pill" onclick="selectVariant(this,'Call')"><span>Front Doors Only</span><span class="vp-price">Call</span></div>
+              <div class="variant-pill" onclick="selectVariant(this,'Call')"><span>Minivan</span><span class="vp-price">Call</span></div>
             </div>
           </div>
           <!-- Windshield variants -->
